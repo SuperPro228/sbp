@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система Быстрых Платежей — Оплата</title>
+    <style>
+        :root {
+            --bg-color: #f2f2f7;
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --text-main: #1d1d1f;
+            --success-green: #34c759;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .main-wrapper {
+            width: 90%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 30px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .info-panel {
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .logo-sbp { width: 160px; margin-bottom: 40px; }
+        .info-panel h1 { font-size: 3.5rem; font-weight: 700; line-height: 1.1; margin-bottom: 20px; letter-spacing: -1.5px; }
+
+        .car-card {
+            width: 100%; height: 180px;
+            background: url('image_7.png') center/cover;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .payment-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: 48px;
+            padding: 50px;
+            border: 1px solid rgba(255,255,255,0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .qr-wrapper {
+            background: #fff;
+            padding: 20px;
+            border-radius: 35px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+            margin-bottom: 30px;
+            width: 280px;
+            height: 280px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .qr-code { width: 100%; height: 100%; object-fit: contain; }
+
+        .success-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease;
+            z-index: 10;
+        }
+
+        .payment-panel.paid .success-overlay { opacity: 1; visibility: visible; }
+
+        .status-bar {
+            margin-top: 40px;
+            font-size: 0.9rem;
+            color: #34c759;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: rgba(52, 199, 89, 0.1);
+            border-radius: 20px;
+        }
+
+        .pulse-dot { width: 8px; height: 8px; background: #34c759; border-radius: 50%; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.4; } }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <div class="info-panel">
+            <img src="SBP.png" class="logo-sbp" alt="СБП">
+            <h1>Быстрая<br>оплата</h1>
+            <p style="color: #86868b; font-size: 1.1rem;">Отсканируйте код для покупки Passat.</p>
+            <div class="car-card"></div>
+        </div>
+
+        <div class="payment-panel" id="payPanel">
+            <div class="success-overlay">
+                <div style="font-size: 80px; color: #34c759; margin-bottom: 20px;">✓</div>
+                <h2 style="font-size: 2rem; margin: 0;">ОПЛАЧЕНО</h2>
+                <p style="color: #888; margin-top: 10px;">Спасибо за покупку!</p>
+                <p style="color: #bbb; font-size: 0.8rem;">Перенаправление на сайт Volkswagen...</p>
+            </div>
+
+            <div class="qr-wrapper">
+                <img src="spbquar.png" class="qr-code" alt="QR">
+            </div>
+
+            <p style="font-weight: 500; color: #666;">Наведите камеру смартфона</p>
+            
+            <div class="status-bar">
+                <div class="pulse-dot"></div>
+                <span id="statusText">Ожидание сканирования...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function completePayment() {
+            const panel = document.getElementById('payPanel');
+            const statusLabel = document.getElementById('statusText');
+            
+            statusLabel.innerText = "Платеж подтвержден!";
+            panel.classList.add('paid');
+
+            setTimeout(() => {
+                // ВНИМАНИЕ: Если твой файл называется пассат.html, то пишем его тут
+                // Если passat.html (на латинице), то замени ниже
+                window.location.href = 'passat.html?status=success';
+            }, 2500);
+        }
+
+        // Авто-оплата через 10 секунд
+        setTimeout(completePayment, 10000);
+
+        // Ручная оплата (Пробел/Enter)
+        document.addEventListener('keydown', function(event) {
+            if (event.code === 'Space' || event.code === 'Enter') {
+                completePayment();
+            }
+        });
+    </script>
+</body>
+</html>
