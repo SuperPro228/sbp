@@ -3,28 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Оплата подтверждена</title>
+    <title>Обработка оплаты...</title>
     <style>
-        body { 
-            margin: 0; 
-            background: #f2f2f7; 
-            font-family: -apple-system, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            text-align: center; 
+        :root {
+            --vw-blue: #001e50; /* Фирменный цвет VW */
+            --success-green: #34c759;
+            --bg: #f5f5f7;
         }
-        .card { background: white; padding: 40px; border-radius: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); width: 80%; }
-        .icon { font-size: 80px; color: #34c759; margin-bottom: 20px; }
-        h1 { font-size: 24px; color: #1d1d1f; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        /* --- АНИМАЦИЯ ЗАГРУЗКИ --- */
+        .loader-box {
+            display: block;
+        }
+
+        .spinner {
+            width: 80px;
+            height: 80px;
+            border: 6px solid rgba(0, 30, 80, 0.1);
+            border-top: 6px solid var(--vw-blue);
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- ЭКРАН УСПЕХА --- */
+        .success-box {
+            display: none;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .check-icon {
+            width: 100px;
+            height: 100px;
+            background: var(--success-green);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 30px;
+            box-shadow: 0 10px 30px rgba(52, 199, 89, 0.3);
+        }
+
+        .check-icon svg {
+            width: 50px;
+            fill: white;
+        }
+
+        h1 { font-size: 2rem; margin: 0; color: #1d1d1f; }
+        p { color: #86868b; font-size: 1.1rem; margin-top: 10px; line-height: 1.4; }
+
+        .active {
+            display: block;
+            opacity: 1;
+            transform: scale(1);
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div class="icon">✓</div>
-        <h1>ОПЛАЧЕНО</h1>
-        <p>Ваш заказ Volkswagen Passat подтвержден!</p>
+
+    <div class="container">
+        <div id="loader" class="loader-box">
+            <div class="spinner"></div>
+            <h1>Обработка...</h1>
+            <p>Связываемся с банком</p>
+        </div>
+
+        <div id="success" class="success-box">
+            <div class="check-icon">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            </div>
+            <h1>Оплата принята</h1>
+            <p>Ваш Volkswagen Passat успешно забронирован!</p>
+        </div>
     </div>
+
+    <script>
+        // Имитация "классной" загрузки
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                // Скрываем загрузчик
+                document.getElementById('loader').style.display = 'none';
+                
+                // Показываем экран успеха
+                const successBox = document.getElementById('success');
+                successBox.classList.add('active');
+                
+                // Меняем заголовок страницы
+                document.title = "Оплата подтверждена!";
+            }, 3000); // Загрузка длится 3 секунды
+        });
+    </script>
 </body>
 </html>
