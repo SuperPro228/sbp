@@ -133,7 +133,6 @@
                 <div style="font-size: 80px; color: #34c759; margin-bottom: 20px;">✓</div>
                 <h2 style="font-size: 2rem; margin: 0;">ОПЛАЧЕНО</h2>
                 <p style="color: #888; margin-top: 10px;">Спасибо за покупку!</p>
-                <p style="color: #bbb; font-size: 0.8rem;">Перенаправление на сайт Volkswagen...</p>
             </div>
 
             <div class="qr-wrapper">
@@ -144,33 +143,42 @@
             
             <div class="status-bar">
                 <div class="pulse-dot"></div>
-                <span id="statusText">Ожидание сканирования...</span>
+                <span>Ожидание оплаты в реальном времени...</span>
             </div>
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <script>
-        function completePayment() {
-            const panel = document.getElementById('payPanel');
-            const statusLabel = document.getElementById('statusText');
-            
-            statusLabel.innerText = "Платеж подтвержден!";
-            panel.classList.add('paid');
+        // Подключаем твою базу
+        var firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        firebase.initializeApp(firebaseConfig);
 
-            setTimeout(() => {
-                // ВНИМАНИЕ: Если твой файл называется пассат.html, то пишем его тут
-                // Если passat.html (на латинице), то замени ниже
-                window.location.href = 'passat.html?status=success';
-            }, 2500);
-        }
+        // Слушаем сигнал от телефона
+        firebase.database().ref('payment').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.status === 'paid') {
+                const panel = document.getElementById('payPanel');
+                
+                // Показываем экран успеха
+                panel.classList.add('paid');
 
-        // Авто-оплата через 10 секунд
-        setTimeout(completePayment, 10000);
+                // Через 2.5 секунды перекидываем на главную
+                setTimeout(() => {
+                    // Сбрасываем статус в базе для следующего раза
+                    firebase.database().ref('payment').set({ status: 'waiting' });
+                    // Переход на страницу с машиной
+                    window.location.href = 'passat.html?status=success';
+                }, 2500);
+            }
+        });
 
-        // Ручная оплата (Пробел/Enter)
+        // Оставляем ручной режим на Пробел/Enter на всякий случай
         document.addEventListener('keydown', function(event) {
             if (event.code === 'Space' || event.code === 'Enter') {
-                completePayment();
+                firebase.database().ref('payment').set({ status: 'paid' });
             }
         });
     </script>
