@@ -1,0 +1,16 @@
+{
+  "short_name": "Apple Pay",
+  "name": "Apple Pay Contactless",
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/sbp/success.html",
+  "background_color": "#000000",
+  "display": "standalone",
+  "scope": "/sbp/",
+  "theme_color": "#000000"
+}
