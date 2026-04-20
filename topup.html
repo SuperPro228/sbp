@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пополнение баланса</title>
+    <style>
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .box { background: #1c1c1e; border-radius: 14px; width: 100%; max-width: 400px; padding: 20px; margin-bottom: 15px; }
+        input { background: none; border: 1px solid #333; color: #fff; font-size: 18px; width: 100%; padding: 10px; border-radius: 8px; box-sizing: border-box; margin-top: 10px; }
+        button { background: #34c759; color: #000; border: none; width: 100%; padding: 15px; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-top: 20px; }
+        .card-list { width: 100%; max-width: 400px; margin-top: 20px; font-size: 14px; color: #8e8e93; }
+    </style>
+</head>
+<body>
+
+    <h2>Пополнение карты</h2>
+
+    <div class="box">
+        <label>ID карты (последние 4 цифры)</label>
+        <input type="number" id="cardId" placeholder="Например: 4402">
+        
+        <label style="display:block; margin-top:15px;">Сумма пополнения</label>
+        <input type="number" id="sumInput" placeholder="Сколько добавить?">
+        
+        <button onclick="addMoney()">Добавить деньги</button>
+    </div>
+
+    <div class="card-list" id="list">Загрузка карт...</div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Показываем список всех карт, чтобы знать ID
+        db.ref('user_cards').on('value', (snap) => {
+            const cards = snap.val() || {};
+            let html = "<b>Доступные карты:</b><br>";
+            for (let id in cards) {
+                html += `${cards[id].name}: <code>${cards[id].digits}</code> (Баланс: ${cards[id].balance} ₽)<br>`;
+            }
+            document.getElementById('list').innerHTML = html;
+        });
+
+        async function addMoney() {
+            const digits = document.getElementById('cardId').value;
+            const amount = parseFloat(document.getElementById('sumInput').value);
+
+            if (!digits || !amount) return alert("Заполни все поля!");
+
+            const snap = await db.ref('user_cards').once('value');
+            const cards = snap.val() || {};
+            const key = Object.keys(cards).find(k => cards[k].digits === digits);
+
+            if (key) {
+                const newBalance = (cards[key].balance || 0) + amount;
+                await db.ref('user_cards/' + key).update({ balance: newBalance });
+                alert("Баланс обновлен!");
+            } else {
+                alert("Карта не найдена!");
+            }
+        }
+    </script>
+</body>
+</html>
