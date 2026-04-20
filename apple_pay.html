@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Wallet</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        :root { 
+            --bg: #000; 
+            --apple-blue: #007aff; 
+            --card-gray: #1c1c1e; 
+        }
+
+        body {
+            margin: 0; background: var(--bg); color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            padding: 0 16px; overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Плавное появление заголовка */
+        header {
+            padding: 60px 0 20px; display: flex; justify-content: space-between; align-items: center;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 { font-size: 34px; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
+
+        .add-btn { 
+            color: var(--apple-blue); font-size: 28px; text-decoration: none; 
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .add-btn:active { transform: scale(0.85); opacity: 0.7; }
+
+        /* Анимация Apple Cash (Мягкое выплывание) */
+        .cash-card {
+            background: #fff; border-radius: 14px; padding: 20px; color: #000;
+            margin-bottom: 30px; 
+            box-shadow: 0 10px 30px rgba(255,255,255,0.05);
+            animation: springUp 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .cash-label { font-size: 13px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+        .cash-amount { font-size: 34px; font-weight: 700; margin-top: 5px; letter-spacing: -1px; }
+
+        /* Список карт с каскадом */
+        #cardsList { display: flex; flex-direction: column; gap: 12px; }
+
+        .card-row {
+            background: var(--card-gray); border-radius: 14px; padding: 14px 16px;
+            display: flex; align-items: center; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: springUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        /* Эффект нажатия в стиле Apple */
+        .card-row:active { transform: scale(0.96); background: #2c2c2e; }
+
+        .card-thumb { 
+            width: 52px; height: 33px; border-radius: 6px; margin-right: 15px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        
+        .sapphire-bg { background: linear-gradient(135deg, #0b1a30 0%, #000 100%); }
+        .gold-bg { background: linear-gradient(135deg, #d4af37 0%, #8a6d1d 100%); }
+        .black-bg { background: #333; border: 1px solid #444; }
+
+        /* Модальное меню (Улучшенный Blur) */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); 
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            display: none; z-index: 1000; align-items: flex-end;
+            transition: opacity 0.3s ease;
+        }
+
+        .action-sheet {
+            width: 100%; background: #1c1c1e; border-radius: 20px 20px 0 0;
+            padding: 25px 20px 45px; box-sizing: border-box;
+            transform: translateY(100%); 
+            transition: transform 0.45s cubic-bezier(0.15, 1, 0.3, 1);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        body.modal-open .overlay { display: flex; animation: fadeIn 0.3s; }
+        body.modal-open .action-sheet { transform: translateY(0); }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        .action-item {
+            background: #2c2c2e; border-radius: 14px; padding: 18px;
+            text-decoration: none; color: #fff; text-align: center; 
+            font-weight: 600; font-size: 16px;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .action-item:active { background: #3a3a3c; transform: scale(0.95); }
+
+        .btn-cancel {
+            width: 100%; background: #333; color: #fff; border: none; 
+            padding: 16px; border-radius: 14px; margin-top: 15px; 
+            font-weight: 600; font-size: 17px;
+            transition: background 0.2s;
+        }
+        .btn-cancel:active { background: #444; }
+
+        /* Ключевые анимации */
+        @keyframes springUp { 
+            0% { opacity: 0; transform: translateY(40px) scale(0.95); } 
+            100% { opacity: 1; transform: translateY(0) scale(1); } 
+        }
+
+        @keyframes fadeIn { 
+            from { opacity: 0; } 
+            to { opacity: 1; } 
+        }
+    </style>
+</head>
+<body id="body">
+    <header>
+        <h1>Wallet</h1>
+        <a href="register.html" class="add-btn">⊕</a>
+    </header>
+
+    <div class="cash-card">
+        <div class="cash-label">Apple Cash</div>
+        <div id="totalBalance" class="cash-amount">0 ₽</div>
+    </div>
+
+    <div id="cardsList">
+        </div>
+
+    <div class="overlay" onclick="closeMenu()">
+        <div class="action-sheet" onclick="event.stopPropagation()">
+            <div id="sheetTitle" style="text-align:center; color:#8e8e93; margin-bottom:25px; font-size: 14px; font-weight: 500;"></div>
+            <div class="action-grid">
+                <a href="qr_pay.html" class="action-item">📷 QR-код</a>
+                <a href="transfer.html" class="action-item">💸 Перевести</a>
+            </div>
+            <button onclick="closeMenu()" class="btn-cancel">Отмена</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        db.ref('user_cards').on('value', (snapshot) => {
+            const data = snapshot.val();
+            const list = document.getElementById('cardsList');
+            let total = 0;
+            let index = 0;
+            list.innerHTML = '';
+            
+            for (let id in data) {
+                total += parseFloat(data[id].balance || 0);
+                // Добавляем stagger (задержку) для каждой следующей карты
+                const delay = index * 0.1; 
+                list.innerHTML += `
+                    <div class="card-row" onclick="openMenu('${data[id].name}', '${data[id].digits}')" style="animation-delay: ${delay}s">
+                        <div class="card-thumb ${data[id].style}"></div>
+                        <div style="flex:1">
+                            <div style="font-weight:600; font-size:17px;">${data[id].name}</div>
+                            <div style="color:#8e8e93; font-size:14px; margin-top: 2px;">•••• ${data[id].digits} | ${data[id].balance.toLocaleString()} ₽</div>
+                        </div>
+                    </div>`;
+                index++;
+            }
+            document.getElementById('totalBalance').innerText = total.toLocaleString() + ' ₽';
+        });
+
+        function openMenu(n, d) {
+            document.getElementById('sheetTitle').innerText = n + ' •••• ' + d;
+            document.getElementById('body').classList.add('modal-open');
+        }
+        
+        function closeMenu() { 
+            document.getElementById('body').classList.remove('modal-open'); 
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Перевод</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --card-gray: #1c1c1e;
+            --apple-blue: #007aff;
+            --text-gray: #8e8e93;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+            -webkit-user-select: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        header {
+            padding: 40px 0 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .back-link { 
+            color: var(--apple-blue); text-decoration: none; font-size: 17px; cursor: pointer; 
+            transition: opacity 0.2s;
+        }
+        .back-link:active { opacity: 0.6; }
+
+        h2 { text-align: center; flex: 1; margin: 0; font-size: 17px; font-weight: 600; padding-right: 40px; }
+
+        .amount-display {
+            text-align: center;
+            margin: 30px 0;
+            font-size: 54px;
+            font-weight: 500;
+            letter-spacing: -1px;
+            transition: transform 0.1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+        }
+
+        .input-group {
+            background: var(--card-gray);
+            border-radius: 14px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .input-row {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #2c2c2e;
+        }
+
+        .input-row:last-child { border-bottom: none; }
+
+        label { width: 90px; color: var(--text-gray); font-size: 15px; }
+
+        input, select {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            flex: 1;
+            outline: none;
+        }
+
+        .btn-send {
+            background: var(--apple-blue);
+            color: white;
+            width: 100%;
+            padding: 18px;
+            border-radius: 14px;
+            border: none;
+            font-size: 17px;
+            font-weight: 600;
+            margin-top: 30px;
+            box-shadow: 0 4px 15px rgba(0, 122, 255, 0.2);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-send:active { transform: scale(0.96); background: #0063ce; }
+        .btn-send:disabled { background: #333; color: #666; box-shadow: none; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bump { transform: scale(1.08); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="back-link" onclick="history.back()">Отмена</div>
+        <h2>Перевод</h2>
+    </header>
+
+    <div class="amount-display" id="display">0 ₽</div>
+
+    <div class="input-group">
+        <div class="input-row">
+            <label>С карты</label>
+            <select id="myCards">
+                <option value="">Загрузка карт...</option>
+            </select>
+        </div>
+        <div class="input-row">
+            <label>Куда</label>
+            <input type="number" placeholder="Последние 4 цифры" id="targetDigits">
+        </div>
+        <div class="input-row">
+            <label>Сумма</label>
+            <input type="number" placeholder="Введите сумму" id="amountInput" oninput="updateDisplay()">
+        </div>
+    </div>
+
+    <button class="btn-send" id="sendBtn" onclick="processTransfer()">Отправить перевод</button>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const myCardsSelect = document.getElementById('myCards');
+        const targetInput = document.getElementById('targetDigits');
+        const display = document.getElementById('display');
+        let cardsData = {};
+
+        // --- НОВОЕ: Проверка QR-данных при загрузке ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const qrTarget = urlParams.get('target');
+            if (qrTarget) {
+                targetInput.value = qrTarget;
+            }
+        });
+
+        db.ref('user_cards').on('value', (snapshot) => {
+            cardsData = snapshot.val();
+            myCardsSelect.innerHTML = '';
+            for (let id in cardsData) {
+                const card = cardsData[id];
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = `${card.name} (•••• ${card.digits}) — ${card.balance} ₽`;
+                myCardsSelect.appendChild(opt);
+            }
+        });
+
+        function updateDisplay() {
+            const val = document.getElementById('amountInput').value;
+            display.innerText = (val || 0) + ' ₽';
+            display.classList.add('bump');
+            setTimeout(() => display.classList.remove('bump'), 100);
+        }
+
+        async function processTransfer() {
+            const fromId = myCardsSelect.value;
+            const targetDigits = targetInput.value;
+            const amount = parseFloat(document.getElementById('amountInput').value);
+            const sendBtn = document.getElementById('sendBtn');
+
+            if (!fromId || !targetDigits || isNaN(amount) || amount <= 0) {
+                alert("Заполните все данные");
+                return;
+            }
+
+            if (cardsData[fromId].balance < amount) {
+                alert("Недостаточно средств");
+                return;
+            }
+
+            sendBtn.disabled = true;
+            sendBtn.innerText = "Выполняется...";
+
+            const snapshot = await db.ref('user_cards').once('value');
+            const allCards = snapshot.val();
+            let targetId = null;
+
+            for (let id in allCards) {
+                if (allCards[id].digits == targetDigits && id !== fromId) {
+                    targetId = id;
+                    break;
+                }
+            }
+
+            if (!targetId) {
+                alert("Карта не найдена");
+                sendBtn.disabled = false;
+                sendBtn.innerText = "Отправить перевод";
+                return;
+            }
+
+            try {
+                await db.ref('user_cards/' + fromId + '/balance').transaction(b => (b || 0) - amount);
+                await db.ref('user_cards/' + targetId + '/balance').transaction(b => (b || 0) + amount);
+                location.href = 'success.html';
+            } catch (e) {
+                alert("Ошибка");
+                sendBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
