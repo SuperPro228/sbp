@@ -20,7 +20,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Плавное появление заголовка */
+        /* Шапка с анимацией плавного появления */
         header {
             padding: 60px 0 20px; display: flex; justify-content: space-between; align-items: center;
             animation: fadeIn 0.8s ease-out;
@@ -34,7 +34,7 @@
         }
         .add-btn:active { transform: scale(0.85); opacity: 0.7; }
 
-        /* Анимация Apple Cash (Мягкое выплывание) */
+        /* Apple Cash Card */
         .cash-card {
             background: #fff; border-radius: 14px; padding: 20px; color: #000;
             margin-bottom: 30px; 
@@ -44,7 +44,7 @@
         .cash-label { font-size: 13px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
         .cash-amount { font-size: 34px; font-weight: 700; margin-top: 5px; letter-spacing: -1px; }
 
-        /* Список карт с каскадом */
+        /* Список карт с пружинным появлением */
         #cardsList { display: flex; flex-direction: column; gap: 12px; }
 
         .card-row {
@@ -55,7 +55,6 @@
             border: 1px solid rgba(255,255,255,0.03);
         }
 
-        /* Эффект нажатия в стиле Apple */
         .card-row:active { transform: scale(0.96); background: #2c2c2e; }
 
         .card-thumb { 
@@ -67,20 +66,19 @@
         .gold-bg { background: linear-gradient(135deg, #d4af37 0%, #8a6d1d 100%); }
         .black-bg { background: #333; border: 1px solid #444; }
 
-        /* Модальное меню (Улучшенный Blur) */
+        /* Overlay & Blur */
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); 
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             display: none; z-index: 1000; align-items: flex-end;
-            transition: opacity 0.3s ease;
         }
 
         .action-sheet {
             width: 100%; background: #1c1c1e; border-radius: 20px 20px 0 0;
             padding: 25px 20px 45px; box-sizing: border-box;
             transform: translateY(100%); 
-            transition: transform 0.45s cubic-bezier(0.15, 1, 0.3, 1);
+            transition: transform 0.4s cubic-bezier(0.15, 1, 0.3, 1);
             border-top: 1px solid rgba(255,255,255,0.1);
         }
 
@@ -92,29 +90,28 @@
         .action-item {
             background: #2c2c2e; border-radius: 14px; padding: 18px;
             text-decoration: none; color: #fff; text-align: center; 
-            font-weight: 600; font-size: 16px;
-            transition: background 0.2s, transform 0.1s;
+            font-weight: 600; transition: background 0.2s;
         }
         .action-item:active { background: #3a3a3c; transform: scale(0.95); }
 
+        .btn-delete {
+            width: 100%; background: rgba(255, 59, 48, 0.15); color: #ff3b30; 
+            border: none; padding: 16px; border-radius: 14px; margin-top: 20px;
+            font-weight: 600; font-size: 17px; transition: 0.2s;
+        }
+        .btn-delete:active { background: rgba(255, 59, 48, 0.3); transform: scale(0.98); }
+
         .btn-cancel {
             width: 100%; background: #333; color: #fff; border: none; 
-            padding: 16px; border-radius: 14px; margin-top: 15px; 
-            font-weight: 600; font-size: 17px;
-            transition: background 0.2s;
+            padding: 16px; border-radius: 14px; margin-top: 10px; font-weight: 600;
         }
-        .btn-cancel:active { background: #444; }
 
-        /* Ключевые анимации */
         @keyframes springUp { 
             0% { opacity: 0; transform: translateY(40px) scale(0.95); } 
             100% { opacity: 1; transform: translateY(0) scale(1); } 
         }
 
-        @keyframes fadeIn { 
-            from { opacity: 0; } 
-            to { opacity: 1; } 
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body id="body">
@@ -128,16 +125,17 @@
         <div id="totalBalance" class="cash-amount">0 ₽</div>
     </div>
 
-    <div id="cardsList">
-        </div>
+    <div id="cardsList"></div>
 
     <div class="overlay" onclick="closeMenu()">
         <div class="action-sheet" onclick="event.stopPropagation()">
-            <div id="sheetTitle" style="text-align:center; color:#8e8e93; margin-bottom:25px; font-size: 14px; font-weight: 500;"></div>
+            <div id="sheetTitle" style="text-align:center; color:#8e8e93; margin-bottom:25px; font-size: 14px;"></div>
             <div class="action-grid">
                 <a href="qr_pay.html" class="action-item">📷 QR-код</a>
                 <a href="transfer.html" class="action-item">💸 Перевести</a>
             </div>
+            
+            <button class="btn-delete" id="deleteBtn">Удалить карту</button>
             <button onclick="closeMenu()" class="btn-cancel">Отмена</button>
         </div>
     </div>
@@ -149,6 +147,8 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        let currentCardId = null;
+
         db.ref('user_cards').on('value', (snapshot) => {
             const data = snapshot.val();
             const list = document.getElementById('cardsList');
@@ -158,14 +158,13 @@
             
             for (let id in data) {
                 total += parseFloat(data[id].balance || 0);
-                // Добавляем stagger (задержку) для каждой следующей карты
-                const delay = index * 0.1; 
+                const delay = index * 0.08; 
                 list.innerHTML += `
-                    <div class="card-row" onclick="openMenu('${data[id].name}', '${data[id].digits}')" style="animation-delay: ${delay}s">
+                    <div class="card-row" onclick="openMenu('${data[id].name}', '${data[id].digits}', '${id}')" style="animation-delay: ${delay}s">
                         <div class="card-thumb ${data[id].style}"></div>
                         <div style="flex:1">
                             <div style="font-weight:600; font-size:17px;">${data[id].name}</div>
-                            <div style="color:#8e8e93; font-size:14px; margin-top: 2px;">•••• ${data[id].digits} | ${data[id].balance.toLocaleString()} ₽</div>
+                            <div style="color:#8e8e93; font-size:14px;">•••• ${data[id].digits} | ${data[id].balance.toLocaleString()} ₽</div>
                         </div>
                     </div>`;
                 index++;
@@ -173,14 +172,19 @@
             document.getElementById('totalBalance').innerText = total.toLocaleString() + ' ₽';
         });
 
-        function openMenu(n, d) {
+        function openMenu(n, d, id) {
+            currentCardId = id;
             document.getElementById('sheetTitle').innerText = n + ' •••• ' + d;
             document.getElementById('body').classList.add('modal-open');
         }
-        
-        function closeMenu() { 
-            document.getElementById('body').classList.remove('modal-open'); 
-        }
+
+        function closeMenu() { document.getElementById('body').classList.remove('modal-open'); }
+
+        document.getElementById('deleteBtn').onclick = function() {
+            if (currentCardId && confirm("Удалить карту?")) {
+                db.ref('user_cards/' + currentCardId).remove().then(() => closeMenu());
+            }
+        };
     </script>
 </body>
 </html>
