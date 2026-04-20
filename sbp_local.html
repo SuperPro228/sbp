@@ -9,15 +9,15 @@
         body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
         .main-wrapper { display: grid; grid-template-columns: 1fr 1.2fr; gap: 40px; width: 90%; max-width: 1000px; animation: fadeIn 0.8s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .info-panel h1 { font-size: 3.5rem; margin: 20px 0; line-height: 1.1; font-weight: 800; letter-spacing: -1px; }
+        .info-panel h1 { font-size: 3.5rem; margin: 20px 0; line-height: 1.1; font-weight: 800; }
         .car-card { width: 100%; height: 200px; background: url('image_7.png') center/cover; border-radius: 24px; box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
         .payment-panel { background: rgba(255,255,255,0.7); backdrop-filter: blur(25px); border-radius: 48px; padding: 50px; text-align: center; position: relative; border: 1px solid #fff; }
-        .qr-box { background: #fff; padding: 20px; border-radius: 30px; margin-bottom: 25px; display: inline-block; box-shadow: 0 5px 15px rgba(0,0,0,0.02); }
+        .qr-box { background: #fff; padding: 20px; border-radius: 30px; margin-bottom: 25px; display: inline-block; }
         .qr-box img { width: 220px; height: 220px; display: block; }
         .card-label { background: #fff; border-radius: 15px; padding: 12px; border: 1px solid #e5e5e5; margin-bottom: 25px; width: 220px; margin-left: auto; margin-right: auto; }
-        .success-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; opacity:0; visibility:hidden; transition: 0.6s cubic-bezier(0.4, 0, 0.2, 1); z-index: 10; }
+        .success-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; opacity:0; visibility:hidden; transition: 0.6s; z-index: 10; }
         .payment-panel.paid .success-overlay { opacity:1; visibility:visible; }
-        .status-tag { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: rgba(52,199,89,0.1); border-radius: 20px; color: var(--green); font-weight: 600; font-size: 14px; }
+        .status-tag { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: rgba(52,199,89,0.1); border-radius: 20px; color: var(--green); font-weight: 600; }
         .pulse { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity:1; } 50% { opacity:0.3; } }
     </style>
@@ -28,15 +28,15 @@
         <div class="info-panel">
             <img src="SBP.png" width="160" alt="СБП">
             <h1>Быстрая<br>оплата</h1>
-            <p style="color: #888; font-size: 1.1rem;">Отсканируйте код для покупки Passat.</p>
+            <p style="color: #888;">Отсканируйте код для покупки Passat.</p>
             <div class="car-card"></div>
         </div>
 
         <div class="payment-panel" id="payPanel">
             <div class="success-overlay">
-                <div style="font-size: 100px; color: var(--green); margin-bottom: 10px;">✓</div>
-                <h2 style="font-size: 2.2rem; margin: 0; font-weight: 800;">ОПЛАЧЕНО</h2>
-                <p style="color: #888; margin-top: 10px;">Благодарим за покупку!</p>
+                <div style="font-size: 100px; color: var(--green);">✓</div>
+                <h2 style="font-size: 2.2rem; margin: 0;">ОПЛАЧЕНО</h2>
+                <p style="color: #888;">Перенаправляем в личный кабинет...</p>
             </div>
 
             <div class="qr-box">
@@ -44,7 +44,7 @@
             </div>
 
             <div class="card-label">
-                <div style="font-size: 10px; color: #aaa; text-transform: uppercase; font-weight: 600;">Карта получателя</div>
+                <div style="font-size: 10px; color: #aaa; text-transform: uppercase;">Счёт магазина</div>
                 <div id="cardNum" style="font-size: 18px; font-weight: 700;">•••• 4402</div>
             </div>
 
@@ -62,32 +62,30 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        const myCard = "4402";
-        const carPrice = "1500000"; // ФИКСИРОВАННАЯ ЦЕНА
+        const storeCard = "4402"; // Карта магазина
+        const carPrice = "1500000";
 
-        async function setup() {
-            const snap = await db.ref('user_cards').once('value');
-            const data = snap.val() || {};
-            const exists = Object.values(data).some(c => c.digits === myCard);
-            if (!exists) await db.ref('user_cards').push({ name: "Passat Seller", digits: myCard, balance: 0 });
+        function init() {
+            document.getElementById('cardNum').innerText = "•••• " + storeCard;
+            document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${storeCard}|${carPrice}`;
             
-            document.getElementById('cardNum').innerText = "•••• " + myCard;
-            // Передаем в QR и карту и точную сумму
-            document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${myCard}|${carPrice}`;
-            
+            // Сбрасываем статус перед началом сессии
             db.ref('payment_sync').set({ status: 'waiting' });
         }
-        setup();
 
+        // Слушаем сигнал об оплате
         db.ref('payment_sync').on('value', (snap) => {
-            const val = snap.val();
-            if (val && val.status === 'paid') {
+            const data = snap.val();
+            if (data && data.status === 'paid') {
                 document.getElementById('payPanel').classList.add('paid');
+                // Ждем 3 секунды, чтобы юзер увидел галочку, и редиректим
                 setTimeout(() => {
                     window.location.href = 'passat.html?status=success';
-                }, 3500);
+                }, 3000);
             }
         });
+
+        init();
     </script>
 </body>
 </html>
