@@ -3,182 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Оплата Passat Pay</title>
+    <title>Оплата заказа</title>
     <style>
-        body {
-            background: #000; color: #fff; font-family: -apple-system, sans-serif;
-            margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .header { margin-top: 50px; text-align: center; width: 100%; }
-        #amountDisplay { font-size: 48px; font-weight: 700; margin: 15px 0; transition: all 0.3s; }
-        
-        .input-group { 
-            background: #1c1c1e; border-radius: 14px; width: 100%; 
-            padding: 15px; box-sizing: border-box; margin-bottom: 12px; 
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        label { color: #8e8e93; font-size: 12px; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600; }
-        
-        select, input {
-            background: none; border: none; color: #fff; font-size: 17px; width: 100%; outline: none;
-            font-family: inherit;
-        }
-
-        .pay-btn {
-            background: #fff; color: #000; border: none; width: 100%;
-            padding: 18px; border-radius: 14px; font-size: 17px; font-weight: 600;
-            margin-top: 30px; transition: 0.3s; cursor: pointer;
-        }
-        .pay-btn:disabled { background: #333; color: #8e8e93; opacity: 0.6; cursor: default; }
-
-        .back-link { color: #007aff; text-decoration: none; margin-top: 25px; font-size: 17px; }
-        
-        #statusHint { margin-top: 10px; font-size: 14px; color: #8e8e93; text-align: center; }
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        #amountDisplay { font-size: 48px; font-weight: 700; margin: 40px 0 20px; }
+        .box { background: #1c1c1e; border-radius: 14px; width: 100%; padding: 15px; box-sizing: border-box; margin-bottom: 12px; }
+        label { color: #8e8e93; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 5px; }
+        select, input { background: none; border: none; color: #fff; font-size: 17px; width: 100%; outline: none; }
+        .receiver-info { color: #007aff; font-weight: 500; font-size: 14px; margin-top: 4px; }
+        .pay-btn { background: #fff; color: #000; border: none; width: 100%; padding: 18px; border-radius: 14px; font-size: 17px; font-weight: 600; margin-top: 30px; transition: 0.2s; }
+        .pay-btn:disabled { background: #333; color: #8e8e93; opacity: 0.5; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div id="amountDisplay">0 ₽</div>
-    </div>
+    <div id="amountDisplay">0 ₽</div>
 
-    <div class="input-group">
-        <label>Карта для списания</label>
+    <div class="box">
+        <label>Списать с моей карты</label>
         <select id="cardSelect" onchange="validate()">
-            <option value="">Загрузка кошелька...</option>
+            <option value="">Загрузка карт...</option>
         </select>
     </div>
 
-    <div class="input-group">
-        <label>ID Получателя (последние 4 цифры)</label>
-        <input type="number" id="vendorInput" placeholder="0000" oninput="validate()">
+    <div class="box">
+        <label>Получатель (ID)</label>
+        <input type="number" id="targetInput" readonly>
+        <div id="receiverName" class="receiver-info">Поиск...</div>
     </div>
 
-    <div class="input-group">
-        <label>Сумма платежа</label>
-        <input type="number" id="priceInput" placeholder="0" oninput="validate()">
+    <div class="box">
+        <label>Сумма</label>
+        <input type="number" id="priceInput" oninput="validate()">
     </div>
 
-    <div id="statusHint">Выберите карту</div>
-
-    <button id="payBtn" class="pay-btn" onclick="executePayment()" disabled>Оплатить</button>
-    
-    <a href="apple_pay.html" class="back-link">Отмена</a>
+    <button id="payBtn" class="pay-btn" onclick="executePayment()" disabled>Подтвердить оплату</button>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
         const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        let allData = {};
 
-        let userCards = {};
-
-        // 1. ЗАГРУЗКА ДАННЫХ ИЗ URL (ОТ СКАНЕРА)
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
-            const target = params.get('target');
-            const amount = params.get('amount');
+            document.getElementById('targetInput').value = params.get('target') || "";
+            document.getElementById('priceInput').value = params.get('amount') || "";
             
-            if (target) document.getElementById('vendorInput').value = target;
-            if (amount) document.getElementById('priceInput').value = amount;
-            
-            loadCards();
+            db.ref('user_cards').on('value', (snap) => {
+                allData = snap.val() || {};
+                updateUI(params.get('target'));
+            });
         };
 
-        // 2. ПОЛУЧЕНИЕ КАРТ ИЗ БАЗЫ
-        function loadCards() {
-            db.ref('user_cards').on('value', (snapshot) => {
-                userCards = snapshot.val();
-                const select = document.getElementById('cardSelect');
-                select.innerHTML = '<option value="">Выберите карту</option>';
-                
-                if (userCards) {
-                    for (let id in userCards) {
-                        const card = userCards[id];
-                        const opt = document.createElement('option');
-                        opt.value = id;
-                        opt.textContent = `${card.name} (•••• ${card.digits}) — ${card.balance.toLocaleString()} ₽`;
-                        select.appendChild(opt);
-                    }
-                }
-                validate();
-            });
+        function updateUI(target) {
+            const select = document.getElementById('cardSelect');
+            select.innerHTML = '<option value="">Выберите карту</option>';
+            let rName = "Не найден";
+            for (let id in allData) {
+                const card = allData[id];
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = `${card.name} (•••• ${card.digits}) — ${card.balance} ₽`;
+                select.appendChild(opt);
+                if (card.digits === target) rName = card.name;
+            }
+            document.getElementById('receiverName').innerText = rName;
+            validate();
         }
 
-        // 3. ПРОВЕРКА ВОЗМОЖНОСТИ ОПЛАТЫ
         function validate() {
-            const price = parseFloat(document.getElementById('priceInput').value) || 0;
-            const vendor = document.getElementById('vendorInput').value;
+            const amt = parseFloat(document.getElementById('priceInput').value) || 0;
             const cardId = document.getElementById('cardSelect').value;
-            
-            const btn = document.getElementById('payBtn');
-            const display = document.getElementById('amountDisplay');
-            const hint = document.getElementById('statusHint');
-
-            display.innerText = price.toLocaleString() + ' ₽';
-
-            if (!cardId) {
-                btn.disabled = true;
-                hint.innerText = "Выберите карту в списке";
-                display.style.color = "#fff";
-                return;
-            }
-
-            const balance = userCards[cardId].balance || 0;
-
-            if (price > balance) {
-                display.style.color = "#ff3b30"; // КРАСНЫЙ: денег нет
-                btn.disabled = true;
-                hint.innerText = "Недостаточно средств (Баланс: " + balance + " ₽)";
-                hint.style.color = "#ff3b30";
-            } else if (price <= 0 || vendor.length < 4) {
-                btn.disabled = true;
-                display.style.color = "#fff";
-                hint.innerText = "Проверьте сумму и ID получателя";
-                hint.style.color = "#8e8e93";
-            } else {
-                display.style.color = "#34c759"; // ЗЕЛЕНЫЙ: всё отлично
-                btn.disabled = false;
-                hint.innerText = "Нажмите для подтверждения";
-                hint.style.color = "#34c759";
-            }
+            document.getElementById('amountDisplay').innerText = amt.toLocaleString() + ' ₽';
+            document.getElementById('payBtn').disabled = !(cardId && amt > 0 && allData[cardId].balance >= amt);
         }
 
-        // 4. ПРОЦЕСС ТРАНЗАКЦИИ
         async function executePayment() {
-            const cardId = document.getElementById('cardSelect').value;
-            const price = parseFloat(document.getElementById('priceInput').value);
-            const vendorDigits = document.getElementById('vendorInput').value;
-            const btn = document.getElementById('payBtn');
+            const myId = document.getElementById('cardSelect').value;
+            const targetDigits = document.getElementById('targetInput').value;
+            const amt = parseFloat(document.getElementById('priceInput').value);
+            
+            let targetId = Object.keys(allData).find(id => allData[id].digits === targetDigits);
 
-            btn.disabled = true;
-            btn.innerText = "Подтверждение...";
+            if (targetId) {
+                // 1. Меняем балансы
+                await db.ref('user_cards/' + myId).update({ balance: allData[myId].balance - amt });
+                await db.ref('user_cards/' + targetId).update({ balance: (allData[targetId].balance || 0) + amt });
 
-            try {
-                // Списание
-                const newBalance = userCards[cardId].balance - price;
-                await db.ref('user_cards/' + cardId).update({ balance: newBalance });
+                // 2. СИГНАЛ НА МОНИТОР (ВАЖНО!)
+                await db.ref('payment').set({ status: 'paid' });
 
-                // Начисление получателю
-                const snap = await db.ref('user_cards').once('value');
-                const all = snap.val();
-                for (let id in all) {
-                    if (all[id].digits === vendorDigits) {
-                        const targetNewBal = (all[id].balance || 0) + price;
-                        await db.ref('user_cards/' + id).update({ balance: targetNewBal });
-                        break;
-                    }
-                }
-
-                // Переход на страницу успеха с данными
-                window.location.href = `success.html?amt=${price}&card=${cardId}`;
-
-            } catch (e) {
-                alert("Ошибка транзакции: " + e.message);
-                btn.disabled = false;
-                btn.innerText = "Оплатить";
+                // 3. Успех на телефоне
+                window.location.href = `success.html?amt=${amt}&card=${myId}`;
             }
         }
     </script>
