@@ -8,85 +8,50 @@
         :root { --bg: #f2f2f7; --green: #34c759; }
         body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .main-wrapper { display: grid; grid-template-columns: 1fr 1.2fr; gap: 40px; width: 90%; max-width: 1000px; animation: fadeIn 0.8s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         .info-panel h1 { font-size: 3.5rem; margin: 20px 0; line-height: 1.1; font-weight: 800; }
-        .car-card { width: 100%; height: 200px; background: url('image_7.png') center/cover; border-radius: 24px; box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+        .car-card { width: 100%; height: 200px; background: url('image_7.png') center/cover; border-radius: 24px; }
         .payment-panel { background: rgba(255,255,255,0.7); backdrop-filter: blur(25px); border-radius: 48px; padding: 50px; text-align: center; position: relative; border: 1px solid #fff; }
         .qr-box { background: #fff; padding: 20px; border-radius: 30px; margin-bottom: 25px; display: inline-block; }
         .qr-box img { width: 220px; height: 220px; display: block; }
         .success-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; opacity:0; visibility:hidden; transition: 0.6s; z-index: 10; }
         .payment-panel.paid .success-overlay { opacity:1; visibility:visible; }
-        .status-tag { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: rgba(52,199,89,0.1); border-radius: 20px; color: var(--green); font-weight: 600; }
-        .pulse { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: blink 1.5s infinite; }
-        @keyframes blink { 0%, 100% { opacity:1; } 50% { opacity:0.3; } }
     </style>
 </head>
 <body>
-
     <div class="main-wrapper">
         <div class="info-panel">
-            <img src="SBP.png" width="160" alt="СБП">
+            <img src="SBP.png" width="160">
             <h1>Быстрая<br>оплата</h1>
-            <p style="color: #888;">Отсканируйте код для покупки Passat.</p>
             <div class="car-card"></div>
         </div>
-
         <div class="payment-panel" id="payPanel">
             <div class="success-overlay">
                 <div style="font-size: 100px; color: var(--green);">✓</div>
-                <h2 style="font-size: 2.2rem; margin: 0;">ОПЛАЧЕНО</h2>
-                <p style="color: #888;">Автомобиль успешно приобретен!</p>
+                <h2>ОПЛАЧЕНО</h2>
             </div>
-
-            <div class="qr-box">
-                <img id="qrImg" src="" alt="QR">
-            </div>
-
-            <div style="margin-bottom: 25px;">
-                <div style="font-size: 12px; color: #888; text-transform: uppercase;">Сумма к оплате</div>
-                <div style="font-size: 24px; font-weight: 800;">1 500 000 ₽</div>
-            </div>
-
-            <div class="status-tag">
-                <div class="pulse"></div>
-                <span>Ожидание оплаты через СБП...</span>
-            </div>
+            <div class="qr-box"><img id="qrImg" src=""></div>
+            <div style="font-size: 24px; font-weight: 800;">1 500 000 ₽</div>
         </div>
     </div>
-
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
         const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-
         const storeCard = "4402"; 
         const carPrice = "1500000";
-
         async function setup() {
-            // Карта магазина в отдельной ветке, чтобы не забивать кошелек пользователя
-            await db.ref('store_info').set({
-                name: "Passat Official Store",
-                digits: storeCard,
-                balance: 0
-            });
-            
+            await db.ref('store_info').set({ name: "Passat Store", digits: storeCard, balance: 0 });
             document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${storeCard}|${carPrice}`;
-            // Сброс статуса для новой сессии
             db.ref('payment_sync').set({ status: 'waiting' });
         }
-
         db.ref('payment_sync').on('value', (snap) => {
-            const data = snap.val();
-            if (data && data.status === 'paid') {
+            if (snap.val() && snap.val().status === 'paid') {
                 document.getElementById('payPanel').classList.add('paid');
-                setTimeout(() => {
-                    window.location.href = 'passat.html?status=success';
-                }, 3500);
+                setTimeout(() => { window.location.href = 'passat.html?status=success'; }, 3500);
             }
         });
-
         setup();
     </script>
 </body>
