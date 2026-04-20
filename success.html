@@ -2,8 +2,15 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Apple Pay</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Apple Pay">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+
     <style>
         :root {
             --bg-color: #000000;
@@ -28,14 +35,14 @@
             user-select: none;
         }
 
-        /* --- КАРТА (Появляется с задержкой) --- */
+        /* --- КАРТА --- */
         .card-visual {
             width: 90%;
             max-width: 340px;
             height: 210px;
             background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
             border-radius: 15px;
-            margin-top: 40px;
+            margin-top: 60px;
             position: relative;
             padding: 20px;
             box-sizing: border-box;
@@ -43,27 +50,20 @@
             opacity: 0;
             transform: translateY(-20px);
             transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            z-index: 2;
         }
-
         .card-visual.show { opacity: 1; transform: translateY(0); }
-
-        .card-visual::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(110deg, transparent 60%, rgba(255,255,255,0.03) 60.5%, transparent 61%);
-            border-radius: 15px;
-        }
 
         .visa-logo-img { position: absolute; bottom: 15px; right: 20px; width: 60px; opacity: 0.95; }
 
-        /* --- ЦЕНТРАЛЬНЫЙ БЛОК --- */
+        /* --- ЦЕНТРАЛЬНЫЙ БЛОК (СТАТУС) --- */
         .status-container {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            z-index: 2;
         }
 
         /* Спиннер */
@@ -78,7 +78,7 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Кольцо успеха */
+        /* Кольцо и галочка */
         .check-ring {
             width: 75px;
             height: 75px;
@@ -103,13 +103,12 @@
             stroke-dashoffset: 50;
         }
 
-        /* Состояния анимации */
+        /* Анимационные классы */
         .anim-processing .apple-spinner { display: none; }
         .anim-processing .check-ring { 
             display: flex; 
             animation: ringPop 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.2) forwards;
         }
-
         .anim-success .check-ring svg {
             animation: drawCheck 0.5s ease-out forwards 0.2s;
         }
@@ -121,13 +120,12 @@
             margin-top: 20px;
             font-size: 19px;
             font-weight: 500;
-            color: var(--text-primary);
             opacity: 0;
             transition: opacity 0.5s ease;
         }
         .anim-success .done-text { opacity: 1; }
 
-        /* --- ФУТЕР --- */
+        /* --- ФУТЕР (ИНФО) --- */
         .payment-info {
             width: 100%;
             padding: 25px 30px 45px;
@@ -137,6 +135,7 @@
             color: var(--text-secondary);
             transform: translateY(100%);
             transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            z-index: 3;
         }
         .payment-info.show { transform: translateY(0); }
 
@@ -150,13 +149,13 @@
     <div class="card-visual" id="card">
         <div style="display: flex; align-items: center; gap: 10px;">
             <svg width="30" viewBox="0 0 24 24" fill="white"><path d="M2 2v20h20V2H2zm18 18H4V4h16v16zM6 6h4v4H6V6zm8 0h4v4h-4V6zm-8 8h4v4H6v-4zm8 0h4v4h-4v-4z"/></svg>
-            <span style="font-weight: 700; font-size: 14px; letter-spacing: 0.5px;">SAPPHIRE RESERVE</span>
+            <span style="font-weight: 700; font-size: 14px;">SAPPHIRE RESERVE</span>
         </div>
         <img src="visa_white.png" class="visa-logo-img">
     </div>
 
     <div class="status-container" id="statusBlock">
-        <div class="apple-spinner" id="spinner"></div>
+        <div class="apple-spinner"></div>
         <div class="check-ring">
             <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
         </div>
@@ -185,32 +184,30 @@
             const footer = document.getElementById('footer');
             const database = firebase.database();
 
-            // ЭТАП 1: Появление интерфейса (0.3с)
+            // 1. Анимация появления интерфейса
             setTimeout(() => {
                 card.classList.add('show');
                 footer.classList.add('show');
             }, 300);
 
-            // ЭТАП 2: Загрузка (спиннер крутится 1.8с)
+            // 2. Имитация обработки (Spinner крутится 2 секунды)
             setTimeout(() => {
                 block.classList.add('anim-processing');
                 
-                // ЭТАП 3: Успех (появление кольца и галочки)
+                // 3. Появление синей галочки
                 setTimeout(() => {
                     block.classList.add('anim-success');
                     
-                    // ЭТАП 4: Отправка данных и отключение
+                    // 4. Отправка сигнала в базу и отключение
                     database.ref('payment').set({ 
                         status: 'paid', 
                         time: Date.now() 
                     }).then(() => {
-                        // Вырубаем соединение, чтобы телефон больше не слал данные
-                        database.goOffline();
-                        console.log("Оплата завершена. Соединение закрыто.");
+                        database.goOffline(); // Телефон "отключается"
                     });
 
                 }, 500);
-            }, 2100); 
+            }, 2300); 
         };
     </script>
 </body>
