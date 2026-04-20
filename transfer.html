@@ -10,32 +10,27 @@
         .box { background: #1c1c1e; border-radius: 14px; width: 100%; padding: 15px; box-sizing: border-box; margin-bottom: 12px; }
         label { color: #8e8e93; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 5px; font-weight: 600; }
         select, input { background: none; border: none; color: #fff; font-size: 17px; width: 100%; outline: none; }
-        .pay-btn { background: #fff; color: #000; border: none; width: 100%; padding: 18px; border-radius: 14px; font-size: 17px; font-weight: 600; margin-top: 30px; transition: 0.2s; }
+        .pay-btn { background: #fff; color: #000; border: none; width: 100%; padding: 18px; border-radius: 14px; font-size: 17px; font-weight: 600; margin-top: 30px; }
         .pay-btn:disabled { background: #333; color: #8e8e93; opacity: 0.6; }
         input[readonly] { color: #8e8e93; }
     </style>
 </head>
 <body>
-
     <div id="amountDisplay">1,500,000 ₽</div>
-
     <div class="box">
         <label>Выберите вашу карту</label>
         <select id="cardSelect" onchange="validate()">
             <option value="">Загрузка карт...</option>
         </select>
     </div>
-
     <div class="box">
         <label>Получатель</label>
         <input type="text" value="Passat Store Official" readonly>
     </div>
-
     <div class="box">
-        <label>Сумма платежа (фиксированная)</label>
+        <label>Сумма платежа</label>
         <input type="number" id="priceInput" readonly>
     </div>
-
     <button id="payBtn" class="pay-btn" onclick="execute()" disabled>Подтвердить оплату</button>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -48,16 +43,14 @@
 
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
-            // Всегда берем 1500000, если в ссылке пусто
             const a = params.get('amount') || "1500000";
-            
             document.getElementById('priceInput').value = a;
             document.getElementById('amountDisplay').innerText = parseFloat(a).toLocaleString() + ' ₽';
             
-            // Читаем ТОЛЬКО user_cards (карта магазина туда больше не попадет)
             db.ref('user_cards').on('value', (snap) => {
                 myCards = snap.val() || {};
                 const select = document.getElementById('cardSelect');
+                const currentVal = select.value;
                 select.innerHTML = '<option value="">Выберите карту</option>';
                 for (let id in myCards) {
                     const c = myCards[id];
@@ -66,6 +59,7 @@
                     opt.textContent = `${c.name} (•••• ${c.digits}) — ${c.balance} ₽`;
                     select.appendChild(opt);
                 }
+                select.value = currentVal;
                 validate();
             });
         };
@@ -84,29 +78,11 @@
         async function execute() {
             const myId = document.getElementById('cardSelect').value;
             const amt = 1500000;
-            const btn = document.getElementById('payBtn');
-
-            btn.disabled = true;
-            btn.innerText = "Перевод...";
-
-            try {
-                // 1. Снимаем у тебя
-                await db.ref('user_cards/' + myId).update({ balance: myCards[myId].balance - amt });
-                
-                // 2. Начисляем магазину в его скрытую папку store_info
-                const storeSnap = await db.ref('store_info').once('value');
-                const storeData = storeSnap.val();
-                await db.ref('store_info').update({ balance: (storeData.balance || 0) + amt });
-
-                // 3. СИГНАЛ МОНИТОРУ (статус paid)
-                await db.ref('payment_sync').set({ status: 'paid', time: Date.now() });
-
-                // 4. Переход на успех телефона
-                window.location.href = `success.html?amt=${amt}`;
-            } catch(e) {
-                alert("Ошибка: " + e.message);
-                btn.disabled = false;
-            }
+            await db.ref('user_cards/' + myId).update({ balance: myCards[myId].balance - amt });
+            const storeSnap = await db.ref('store_info').once('value');
+            await db.ref('store_info').update({ balance: (storeSnap.val().balance || 0) + amt });
+            await db.ref('payment_sync').set({ status: 'paid', time: Date.now() });
+            window.location.href = `success.html?amt=${amt}`;
         }
     </script>
 </body>
