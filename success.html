@@ -61,7 +61,17 @@
         .card-type { font-size: 13px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.8; }
         .card-chip { width: 40px; height: 30px; background: #333; border-radius: 5px; margin-top: 15px; }
         .card-number { position: absolute; bottom: 20px; left: 20px; font-size: 14px; color: var(--text-secondary); font-family: "Courier New", monospace; }
-        .visa-logo { position: absolute; bottom: 18px; right: 20px; width: 50px; opacity: 0.9; }
+        
+        /* ОБНОВЛЕННЫЙ СТИЛЬ ДЛЯ ТВОЕГО ЛОГОТИПА */
+        .visa-logo-img { 
+            position: absolute; 
+            bottom: 15px; /* Чуть выше, чтобы смотрелось аккуратно */
+            right: 20px; 
+            width: 60px; /* Размер логотипа */
+            height: auto; 
+            opacity: 0.95; 
+            object-fit: contain; /* Сохраняет пропорции картинки */
+        }
 
         /* --- СИНЕЕ КОЛЬЦО И АНИМАЦИЯ --- */
         .status-container {
@@ -70,7 +80,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            margin-top: -20px; /* Сдвигаем вверх */
+            margin-top: -20px;
         }
 
         .check-ring {
@@ -82,16 +92,12 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            /* Голубое неоновое свечение */
             box-shadow: 0 0 15px rgba(0, 122, 255, 0.5), inset 0 0 10px rgba(0, 122, 255, 0.3);
-            
-            /* Скрыто по умолчанию для анимации */
             opacity: 0;
             transform: scale(0.6);
             transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
         }
 
-        /* Галочка SVG */
         .check-ring svg {
             width: 35px;
             fill: none;
@@ -99,20 +105,17 @@
             stroke-width: 3;
             stroke-linecap: round;
             stroke-linejoin: round;
-            
-            /* Анимация рисования галочки */
             stroke-dasharray: 50;
             stroke-dashoffset: 50;
         }
 
-        /* Класс для запуска анимации */
         .status-container.animated .check-ring {
             opacity: 1;
             transform: scale(1);
         }
 
         .status-container.animated .check-ring svg {
-            animation: drawCheck 0.4s ease-out forwards 0.4s; /* Задержка чтобы кольцо появилось */
+            animation: drawCheck 0.4s ease-out forwards 0.4s;
         }
 
         @keyframes drawCheck {
@@ -164,7 +167,8 @@
         </div>
         <div class="card-chip"></div>
         <div class="card-number">.... 9112</div>
-        <svg class="visa-logo" viewBox="0 0 100 30" fill="white"><path d="M42.1 2.3L34.3 22h-4.8L23.9 6.2c-0.3-1.1-1-1.7-2-1.7h-7.6L14 6.7c3.9 1 6.5 2.1 8.8 3.8l6.8 15.6h5.1L47 2.3H42.1z M62.2 2.3h-4.8c-1.1 0-2 0.7-2.4 1.7L46.8 22h5.1l1.1-3h6.3l0.6 3h4.5L62.2 2.3z M54.6 15l2.4-6.8l1.4 6.8H54.6z M11.5 2.3L0 2.3v1.1c5.3 1.3 8.7 3.3 11 6.2l1.6 8h5.3L23.4 2.3h-5.1c-0.1 0.7-0.7 2.7-0.8 3c-1.1-2.2-3.8-5.3-6.1-5.3H11.5z M77.7 2.3h-4.4c-1.3 0-2.3 1-2.3 2.3v3.1c0 4.1 5.7 4.3 5.7 6.6c0 1-0.9 1.8-2.3 1.8c-1.8 0-3.1-0.7-3.1-0.7l-0.7 3.9c0 0 1.5 0.9 3.8 0.9c4.3 0 7-2.1 7-5.5c0-4.3-5.7-4.5-5.7-6.5c0-0.9 0.8-1.5 2.1-1.5c1.6 0 2.7 0.6 2.7 0.6l0.6-3.8c0 0-1.2-0.8-3.4-0.8V2.3z"/><text x="80" y="27" font-size="7" fill="white" font-family="sans-serif">Infinite</text></svg>
+        
+        <img src="visa_white.png" alt="Visa Infinite" class="visa-logo-img">
     </div>
 
     <div class="status-container" id="statusBlock">
