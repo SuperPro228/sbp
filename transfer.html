@@ -6,13 +6,14 @@
     <title>Подтверждение оплаты</title>
     <style>
         body { background: #000; color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        #amountDisplay { font-size: 48px; font-weight: 700; margin: 40px 0 20px; transition: color 0.3s; }
+        #amountDisplay { font-size: 44px; font-weight: 700; margin: 40px 0 20px; transition: color 0.3s; }
         .box { background: #1c1c1e; border-radius: 14px; width: 100%; padding: 15px; box-sizing: border-box; margin-bottom: 12px; }
-        label { color: #8e8e93; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 5px; }
+        label { color: #8e8e93; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 5px; font-weight: 600; }
         select, input { background: none; border: none; color: #fff; font-size: 17px; width: 100%; outline: none; }
         .receiver-info { color: #007aff; font-weight: 500; font-size: 14px; margin-top: 4px; }
-        .pay-btn { background: #fff; color: #000; border: none; width: 100%; padding: 18px; border-radius: 14px; font-size: 17px; font-weight: 600; margin-top: 30px; }
-        .pay-btn:disabled { background: #333; color: #8e8e93; }
+        .pay-btn { background: #fff; color: #000; border: none; width: 100%; padding: 18px; border-radius: 14px; font-size: 17px; font-weight: 600; margin-top: 30px; transition: 0.2s; }
+        .pay-btn:disabled { background: #333; color: #8e8e93; opacity: 0.6; }
+        input[readonly] { color: #8e8e93; } /* Визуально выделяем, что менять нельзя */
     </style>
 </head>
 <body>
@@ -33,9 +34,8 @@
     </div>
 
     <div class="box">
-        <label>Сумма перевода</label>
-        <input type="number" id="priceInput" oninput="validate()">
-    </div>
+        <label>Сумма к оплате (зафиксировано)</label>
+        <input type="number" id="priceInput" readonly> </div>
 
     <button id="payBtn" class="pay-btn" onclick="executePayment()" disabled>Подтвердить оплату</button>
 
@@ -50,17 +50,21 @@
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
             const t = params.get('target');
-            const a = params.get('amount');
+            const a = params.get('amount'); // Сюда придет 1500000 из QR
+            
             if (t) document.getElementById('targetInput').value = t;
-            if (a) document.getElementById('priceInput').value = a;
+            if (a) {
+                document.getElementById('priceInput').value = a;
+                document.getElementById('amountDisplay').innerText = parseFloat(a).toLocaleString() + ' ₽';
+            }
             
             db.ref('user_cards').on('value', (snap) => {
                 allCards = snap.val() || {};
-                updateReceiver(t);
+                updateUI(t);
             });
         };
 
-        function updateReceiver(t) {
+        function updateUI(t) {
             const select = document.getElementById('cardSelect');
             select.innerHTML = '<option value="">Выберите карту</option>';
             let name = "Не найден";
@@ -80,7 +84,6 @@
             const amt = parseFloat(document.getElementById('priceInput').value) || 0;
             const cardId = document.getElementById('cardSelect').value;
             const display = document.getElementById('amountDisplay');
-            display.innerText = amt.toLocaleString() + ' ₽';
             
             if (cardId && allCards[cardId]) {
                 const canPay = allCards[cardId].balance >= amt && amt > 0;
@@ -101,20 +104,15 @@
             const targetId = Object.keys(allCards).find(id => allCards[id].digits === targetDigits);
 
             if (targetId) {
-                // 1. Обновляем деньги
                 await db.ref('user_cards/' + myId).update({ balance: allCards[myId].balance - amt });
                 await db.ref('user_cards/' + targetId).update({ balance: (allCards[targetId].balance || 0) + amt });
 
-                // 2. КРИТИЧЕСКИЙ МОМЕНТ: Сигнал монитору
-                await db.ref('payment_sync').set({ 
-                    status: 'paid', 
-                    time: Date.now() 
-                });
+                // СИГНАЛ НА МОНИТОР
+                await db.ref('payment_sync').set({ status: 'paid', time: Date.now() });
 
-                // 3. Уходим на успех
-                window.location.href = `success.html?amt=${amt}&card=${myId}`;
+                window.location.href = `success.html?amt=${amt}`;
             } else {
-                alert("Ошибка: Получатель не найден");
+                alert("Ошибка получателя");
                 btn.disabled = false;
             }
         }
