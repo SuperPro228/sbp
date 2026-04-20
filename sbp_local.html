@@ -10,108 +10,65 @@
             --card-bg: rgba(255, 255, 255, 0.7);
             --text-main: #1d1d1f;
             --success-green: #34c759;
+            --apple-blue: #007aff;
         }
 
         body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color); color: var(--text-main);
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
         }
 
         .main-wrapper {
-            width: 90%;
-            max-width: 1000px;
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 30px;
-            animation: fadeIn 0.8s ease-out;
+            width: 90%; max-width: 1000px; display: grid;
+            grid-template-columns: 1fr 1.2fr; gap: 30px; animation: fadeIn 0.8s ease-out;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .info-panel {
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
+        .info-panel { padding: 40px; display: flex; flex-direction: column; justify-content: center; }
         .logo-sbp { width: 160px; margin-bottom: 40px; }
         .info-panel h1 { font-size: 3.5rem; font-weight: 700; line-height: 1.1; margin-bottom: 20px; letter-spacing: -1.5px; }
 
         .car-card {
-            width: 100%; height: 180px;
-            background: url('image_7.png') center/cover;
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            margin-top: 20px;
+            width: 100%; height: 180px; background: url('image_7.png') center/cover;
+            border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); margin-top: 20px;
         }
 
         .payment-panel {
-            background: var(--card-bg);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border-radius: 48px;
-            padding: 50px;
-            border: 1px solid rgba(255,255,255,0.4);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+            background: var(--card-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border-radius: 48px; padding: 50px; border: 1px solid rgba(255,255,255,0.4);
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            position: relative; overflow: hidden;
         }
 
         .qr-wrapper {
-            background: #fff;
-            padding: 20px;
-            border-radius: 35px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
-            margin-bottom: 30px;
-            width: 280px;
-            height: 280px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: #fff; padding: 20px; border-radius: 35px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03); margin-bottom: 20px;
+            width: 250px; height: 250px; display: flex; justify-content: center; align-items: center;
         }
-
         .qr-code { width: 100%; height: 100%; object-fit: contain; }
 
-        .success-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.5s ease;
-            z-index: 10;
+        /* НОВЫЙ БЛОК КАРТЫ */
+        .card-info-box {
+            background: #fff; border-radius: 18px; padding: 12px 25px;
+            border: 1px solid rgba(0,0,0,0.05); margin-bottom: 20px; width: 250px;
         }
+        .card-label { font-size: 10px; color: #8e8e93; text-transform: uppercase; margin-bottom: 3px; font-weight: 600; }
+        .card-num { font-size: 18px; font-weight: 700; color: #1d1d1f; letter-spacing: 1px; }
 
+        .success-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; opacity: 0;
+            visibility: hidden; transition: all 0.5s ease; z-index: 10;
+        }
         .payment-panel.paid .success-overlay { opacity: 1; visibility: visible; }
 
         .status-bar {
-            margin-top: 40px;
-            font-size: 0.9rem;
-            color: #34c759;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 20px;
-            background: rgba(52, 199, 89, 0.1);
-            border-radius: 20px;
+            margin-top: 30px; font-size: 0.9rem; color: #34c759; font-weight: 600;
+            display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+            background: rgba(52, 199, 89, 0.1); border-radius: 20px;
         }
 
         .pulse-dot { width: 8px; height: 8px; background: #34c759; border-radius: 50%; animation: pulse 1.5s infinite; }
@@ -136,10 +93,15 @@
             </div>
 
             <div class="qr-wrapper">
-                <img src="spbquar.png" class="qr-code" alt="QR">
+                <img id="qrImg" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=4402|500" class="qr-code" alt="QR">
             </div>
 
-            <p style="font-weight: 500; color: #666;">Наведите камеру смартфона</p>
+            <div class="card-info-box">
+                <div class="card-label">Карта получателя</div>
+                <div class="card-num" id="displayDigits">•••• 4402</div>
+            </div>
+
+            <p style="font-weight: 500; color: #666; margin: 0;">Наведите камеру смартфона</p>
             
             <div class="status-bar">
                 <div class="pulse-dot"></div>
@@ -152,34 +114,46 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // Подключаем твою базу
-        var firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
-        firebase.initializeApp(firebaseConfig);
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        // Слушаем сигнал от телефона
-        firebase.database().ref('payment').on('value', (snapshot) => {
+        // 1. НАСТРОЙКИ КАРТЫ
+        const myTargetCard = "4402"; 
+
+        async function initSbp() {
+            // Проверка и регистрация карты
+            const snap = await db.ref('user_cards').once('value');
+            const allCards = snap.val() || {};
+            let exists = false;
+            for (let id in allCards) {
+                if (allCards[id].digits === myTargetCard) { exists = true; break; }
+            }
+            if (!exists) {
+                await db.ref('user_cards').push({ name: "Passat Seller", digits: myTargetCard, balance: 0 });
+            }
+
+            document.getElementById('displayDigits').innerText = "•••• " + myTargetCard;
+            document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${myTargetCard}|500`;
+        }
+
+        initSbp();
+
+        // 2. СЛУШАТЕЛЬ ОПЛАТЫ (Твой старый код)
+        db.ref('payment').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.status === 'paid') {
-                const panel = document.getElementById('payPanel');
-                
-                // Показываем экран успеха
-                panel.classList.add('paid');
-
-                // Через 2.5 секунды перекидываем на главную
+                document.getElementById('payPanel').classList.add('paid');
                 setTimeout(() => {
-                    // Сбрасываем статус в базе для следующего раза
-                    firebase.database().ref('payment').set({ status: 'waiting' });
-                    // Переход на страницу с машиной
+                    db.ref('payment').set({ status: 'waiting' });
                     window.location.href = 'passat.html?status=success';
                 }, 2500);
             }
         });
 
-        // Оставляем ручной режим на Пробел/Enter на всякий случай
-        document.addEventListener('keydown', function(event) {
-            if (event.code === 'Space' || event.code === 'Enter') {
-                firebase.database().ref('payment').set({ status: 'paid' });
-            }
+        // Ручной тест на Enter
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Enter') db.ref('payment').set({ status: 'paid' });
         });
     </script>
 </body>
