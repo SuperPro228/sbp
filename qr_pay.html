@@ -12,20 +12,20 @@
         }
         .container { background: #1c1c1e; padding: 40px 20px; border-radius: 30px; width: 85%; max-width: 350px; }
         h1 { font-size: 24px; margin-bottom: 10px; }
-        p { color: #8e8e93; margin-bottom: 30px; font-size: 16px; }
+        p { color: #8e8e93; margin-bottom: 30px; font-size: 14px; }
         
         .qr-wrapper { 
             background: #fff; padding: 15px; border-radius: 20px; 
-            display: inline-block; margin-bottom: 20px;
+            display: inline-block; margin-bottom: 20px; min-width: 200px; min-height: 200px;
         }
         #qrImage { width: 200px; height: 200px; display: block; }
         
         .user-id { font-weight: 700; color: #007aff; font-size: 20px; margin-top: 10px; }
         
         .back-btn { 
-            margin-top: 40px; color: #fff; text-decoration: none; 
-            background: #333; padding: 15px 40px; border-radius: 14px; 
-            font-weight: 600; width: 100%; box-sizing: border-box;
+            display: block; margin-top: 40px; color: #fff; text-decoration: none; 
+            background: #333; padding: 15px; border-radius: 14px; 
+            font-weight: 600; font-size: 17px;
         }
     </style>
 </head>
@@ -33,10 +33,10 @@
 
     <div class="container">
         <h1 id="displayName">Apple Pay</h1>
-        <p>Покажите этот код, чтобы получить перевод на свой аккаунт</p>
+        <p>Отсканируйте этот код, чтобы перевести деньги на мой аккаунт</p>
 
         <div class="qr-wrapper">
-            <img id="qrImage" src="" alt="QR Code">
+            <img id="qrImage" src="" alt="Генерация QR...">
         </div>
 
         <div class="user-id" id="userId">@ID</div>
@@ -45,26 +45,30 @@
     </div>
 
     <script>
-        // 1. Получаем текущего пользователя
         const user = localStorage.getItem('walletUser');
 
         if (!user) {
             window.location.href = 'index.html';
         } else {
-            // Отображаем имя
-            document.getElementById('displayName').innerText = user.charAt(0).toUpperCase() + user.slice(1);
+            const name = user.charAt(0).toUpperCase() + user.slice(1);
+            document.getElementById('displayName').innerText = name;
             document.getElementById('userId').innerText = '@' + user;
 
-            // 2. Генерируем ссылку для QR-кода
-            // Ссылка будет вести на твой transfer.html с параметром твоего ID
-            // Пример: https://твой-сайт.github.io/transfer.html?target=USER:имя
-            const currentURL = window.location.origin + window.location.pathname.replace('qr_pay.html', 'transfer.html');
-            const payLink = `${currentURL}?target=USER:${user}`;
-
-            // 3. Используем Google Charts API для создания QR
-            const qrUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(payLink)}&choe=UTF-8`;
+            // Кодируем данные: префикс USER: и никнейм
+            const qrData = encodeURIComponent("USER:" + user);
             
-            document.getElementById('qrImage').src = qrUrl;
+            // Используем проверенный сервис api.qrserver.com
+            // Добавляем параметры цвета (000000) и фона (ffffff) для надежности
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}&bgcolor=ffffff&color=000000&margin=1`;
+            
+            const img = document.getElementById('qrImage');
+            img.src = qrUrl;
+
+            // Проверка на ошибку загрузки
+            img.onerror = function() {
+                alert("Ошибка загрузки QR-кода. Проверьте интернет или попробуйте позже.");
+                this.alt = "Ошибка загрузки";
+            };
         }
     </script>
 
