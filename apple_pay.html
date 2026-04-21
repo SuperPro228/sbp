@@ -6,7 +6,7 @@
     <title>Apple Wallet</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        :root { --bg: #000; --apple-blue: #007aff; --card-gray: #1c1c1e; --apple-red: #ff3b30; }
+        :root { --bg: #000; --apple-blue: #007aff; --card-gray: #1c1c1e; --apple-red: #ff3b30; --apple-green: #34c759; }
         body { 
             margin: 0; background: var(--bg); color: #fff; 
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; 
@@ -16,19 +16,22 @@
         .header-left { display: flex; flex-direction: column; }
         h1 { font-size: 34px; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
         
-        /* Кнопка выхода в хедере */
         .logout-link { color: var(--apple-red); font-size: 14px; text-decoration: none; margin-top: 4px; font-weight: 400; cursor: pointer; }
         
         .header-btns { display: flex; align-items: center; gap: 20px; }
         .add-btn { color: var(--apple-blue); font-size: 28px; text-decoration: none; cursor: pointer; }
         
+        /* Карточка Apple Cash — теперь ведет в кликер */
         .cash-card {
             background: #fff; border-radius: 14px; padding: 20px; color: #000;
             margin-bottom: 30px; box-shadow: 0 10px 30px rgba(255,255,255,0.05);
             animation: springUp 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+            cursor: pointer;
         }
         .cash-label { font-size: 13px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
         .cash-amount { font-size: 34px; font-weight: 700; margin-top: 5px; letter-spacing: -1px; }
+
+        .section-title { font-size: 22px; font-weight: 700; margin: 25px 0 15px; letter-spacing: -0.5px; }
 
         #cardsList { display: flex; flex-direction: column; gap: 12px; }
         .card-row {
@@ -44,10 +47,20 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
-        #reader { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 2000; display: none; background: #000; 
+        /* Стили Истории Операций */
+        #historyList { background: var(--card-gray); border-radius: 14px; overflow: hidden; margin-bottom: 40px; }
+        .history-item { 
+            padding: 15px 16px; border-bottom: 0.5px solid #333; 
+            display: flex; justify-content: space-between; align-items: center; 
         }
+        .history-item:last-child { border: none; }
+        .hist-info { display: flex; flex-direction: column; }
+        .hist-name { font-weight: 600; font-size: 16px; }
+        .hist-date { font-size: 13px; color: #8e8e93; margin-top: 2px; }
+        .hist-amount { font-weight: 600; font-size: 17px; }
+        .amount-plus { color: var(--apple-green); }
+
+        #reader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000; display: none; background: #000; }
 
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -91,12 +104,18 @@
         </div>
     </header>
 
-    <div class="cash-card">
-        <div class="cash-label">Apple Cash</div>
+    <div class="cash-card" onclick="window.location.href='casino.html'">
+        <div class="cash-label">Apple Cash (Нажми, чтобы заработать)</div>
         <div id="totalBalance" class="cash-amount">0 ₽</div>
     </div>
 
+    <div class="section-title">Карты</div>
     <div id="cardsList"></div>
+
+    <div class="section-title">Последние операции</div>
+    <div id="historyList">
+        <div style="padding: 20px; text-align: center; color: #555;">История пуста</div>
+    </div>
 
     <div class="overlay" onclick="closeMenu()">
         <div class="action-sheet" onclick="event.stopPropagation()">
@@ -129,6 +148,7 @@
             document.getElementById('userHeader').innerText = user.charAt(0).toUpperCase() + user.slice(1);
         }
 
+        // Обновление баланса и списка карт
         db.ref('users/' + user).on('value', (snap) => {
             const data = snap.val();
             if (!data) return;
@@ -153,6 +173,36 @@
             }
         });
 
+        // Загрузка Истории
+        db.ref('users/' + user + '/history').orderByChild('timestamp').limitToLast(10).on('value', (snap) => {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            const items = [];
+            
+            snap.forEach(child => { items.unshift(child.val()); });
+
+            if (items.length === 0) {
+                historyList.innerHTML = '<div style="padding: 20px; text-align: center; color: #555;">Нет недавних операций</div>';
+                return;
+            }
+
+            items.forEach(item => {
+                const isPlus = item.type === 'income' || item.type === 'casino';
+                const date = new Date(item.timestamp).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+                
+                historyList.innerHTML += `
+                    <div class="history-item">
+                        <div class="hist-info">
+                            <span class="hist-name">${item.title}</span>
+                            <span class="hist-date">${date}</span>
+                        </div>
+                        <span class="hist-amount ${isPlus ? 'amount-plus' : ''}">
+                            ${isPlus ? '+' : ''}${item.amount.toLocaleString()} ₽
+                        </span>
+                    </div>`;
+            });
+        });
+
         function openMenu(name, digits, id) {
             selectedCardId = id;
             document.getElementById('sheetTitle').innerText = name + ' •••• ' + digits;
@@ -165,19 +215,12 @@
             closeMenu();
             const readerDiv = document.getElementById('reader');
             readerDiv.style.display = 'block';
-            
             const html5QrCode = new Html5Qrcode("reader");
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-            html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
                 html5QrCode.stop().then(() => {
                     readerDiv.style.display = 'none';
-                    if (decodedText.includes('USER:')) {
-                        const target = decodedText.split('USER:')[1];
-                        window.location.href = `transfer.html?target=USER:${target}`;
-                    } else {
-                        window.location.href = `transfer.html?target=${decodedText}`;
-                    }
+                    const target = decodedText.includes('USER:') ? decodedText.split('USER:')[1] : decodedText;
+                    window.location.href = `transfer.html?target=${target}`;
                 });
             });
         }
@@ -197,7 +240,6 @@
             }
         };
 
-        // ФУНКЦИЯ ВЫХОДА
         function logout() { 
             if(confirm("Вы уверены, что хотите выйти из Apple ID?")) {
                 localStorage.removeItem('walletUser'); 
