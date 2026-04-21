@@ -8,23 +8,22 @@
         body { background: #000; color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; }
         .cancel { color: #007aff; text-decoration: none; font-size: 17px; }
-        h1 { font-size: 32px; margin: 20px 0; }
+        h1 { font-size: 32px; margin: 20px 0; text-align: center; }
         
-        .form-group { background: #1c1c1e; border-radius: 14px; padding: 5px 15px; margin-top: 20px; }
+        .input-group { background: #1c1c1e; border-radius: 14px; padding: 5px 15px; margin-top: 20px; }
+        .input-row { display: flex; align-items: center; border-bottom: 0.5px solid #333; padding: 10px 0; }
+        .input-row:last-child { border: none; }
+        label { width: 120px; color: #fff; font-size: 17px; }
         input { 
-            width: 100%; background: none; border: none; color: #fff; 
-            padding: 15px 0; font-size: 17px; outline: none;
-            border-bottom: 0.5px solid #333;
+            flex: 1; background: none; border: none; color: #8e8e93; 
+            font-size: 17px; outline: none; text-align: right;
         }
-        input:last-child { border: none; }
-        input::placeholder { color: #555; }
-
+        
         .btn-add { 
             background: #fff; color: #000; border: none; width: 100%; 
             padding: 18px; border-radius: 14px; font-size: 17px; 
-            font-weight: 600; margin-top: 30px; cursor: pointer;
+            font-weight: 600; margin-top: 40px; cursor: pointer;
         }
-        .status-msg { color: #ff3b30; font-size: 14px; margin-top: 15px; text-align: center; display: none; }
     </style>
 </head>
 <body>
@@ -33,17 +32,20 @@
         <a href="apple_pay.html" class="cancel">Отмена</a>
     </div>
 
-    <h1>Добавить карту</h1>
-    <p style="color: #8e8e93;">Введите данные вашей карты для привязки к Apple Cash.</p>
+    <h1>Данные карты</h1>
 
-    <div class="form-group">
-        <input type="text" id="cardName" placeholder="Название (например, Tinkoff)">
-        <input type="number" id="cardDigits" placeholder="Последние 4 цифры" oninput="if(this.value.length>4)this.value=this.value.slice(0,4)">
-        <input type="number" id="cardBalance" placeholder="Начальный баланс (₽)">
+    <div class="input-group">
+        <div class="input-row">
+            <label>Название</label>
+            <input type="text" id="cardName" placeholder="Напр. Tinkoff">
+        </div>
+        <div class="input-row">
+            <label>Номер</label>
+            <input type="number" id="cardDigits" placeholder="Последние 4 цифры" oninput="if(this.value.length > 4) this.value = this.value.slice(0,4)">
+        </div>
     </div>
 
-    <div id="status" class="status-msg">Карта с такими цифрами уже существует!</div>
-    <button class="btn-add" id="saveBtn" onclick="addCard()">Добавить</button>
+    <button class="btn-add" onclick="addCard()">Добавить</button>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -58,67 +60,23 @@
         async function addCard() {
             const name = document.getElementById('cardName').value;
             const digits = document.getElementById('cardDigits').value;
-            const balance = parseFloat(document.getElementById('cardBalance').value) || 0;
-            const statusMsg = document.getElementById('status');
-            const btn = document.getElementById('saveBtn');
 
             if (!name || digits.length !== 4) {
                 alert("Введите название и 4 цифры карты");
                 return;
             }
 
-            btn.disabled = true;
-            btn.innerText = "Проверка...";
-            statusMsg.style.display = "none";
-
             try {
-                // 1. Проверяем ВСЕХ пользователей на наличие такой карты
-                const usersSnap = await db.ref('users').once('value');
-                let isDuplicate = false;
-
-                usersSnap.forEach((childSnap) => {
-                    const userData = childSnap.val();
-                    if (userData.cards) {
-                        Object.values(userData.cards).forEach(card => {
-                            if (card.digits === digits) {
-                                isDuplicate = true;
-                            }
-                        });
-                    }
-                });
-
-                if (isDuplicate) {
-                    statusMsg.innerText = "Карта с такими цифрами уже зарегистрирована!";
-                    statusMsg.style.display = "block";
-                    btn.disabled = false;
-                    btn.innerText = "Добавить";
-                    return;
-                }
-
-                // 2. Если дубликатов нет, создаем карту
-                const newCardRef = db.ref('users/' + user + '/cards').push();
-                await newCardRef.set({
+                // Просто добавляем карту в список пользователя без изменения баланса
+                await db.ref('users/' + user + '/cards').push({
                     name: name,
                     digits: digits,
-                    balance: balance
-                });
-
-                // 3. Обновляем общий баланс пользователя
-                const userRef = db.ref('users/' + user);
-                const currentSnap = await userRef.once('value');
-                const currentBalance = currentSnap.val().balance || 0;
-                
-                await userRef.update({
-                    balance: currentBalance + balance
+                    timestamp: Date.now()
                 });
 
                 window.location.href = 'apple_pay.html';
-
-            } catch (error) {
-                console.error(error);
-                alert("Ошибка при сохранении");
-                btn.disabled = false;
-                btn.innerText = "Добавить";
+            } catch (e) {
+                alert("Ошибка при добавлении");
             }
         }
     </script>
