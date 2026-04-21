@@ -3,121 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Wallet</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Apple Wallet</title>
     <style>
-        :root { 
-            --bg: #000; 
-            --apple-blue: #007aff; 
-            --card-gray: #1c1c1e; 
-        }
-
+        :root { --bg: #000; --apple-blue: #007aff; --card-gray: #1c1c1e; }
         body {
             margin: 0; background: var(--bg); color: #fff;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-            padding: 0 16px; overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
+            padding: 0 16px; overflow-x: hidden; -webkit-tap-highlight-color: transparent;
         }
-
-        /* Шапка с анимацией плавного появления */
-        header {
-            padding: 60px 0 20px; display: flex; justify-content: space-between; align-items: center;
-            animation: fadeIn 0.8s ease-out;
-        }
-
+        header { padding: 60px 0 20px; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.8s ease-out; }
         h1 { font-size: 34px; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
-
-        .add-btn { 
-            color: var(--apple-blue); font-size: 28px; text-decoration: none; 
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
-        }
-        .add-btn:active { transform: scale(0.85); opacity: 0.7; }
-
-        /* Apple Cash Card */
+        .add-btn { color: var(--apple-blue); font-size: 28px; text-decoration: none; transition: 0.2s; }
+        
         .cash-card {
             background: #fff; border-radius: 14px; padding: 20px; color: #000;
-            margin-bottom: 30px; 
-            box-shadow: 0 10px 30px rgba(255,255,255,0.05);
+            margin-bottom: 30px; box-shadow: 0 10px 30px rgba(255,255,255,0.05);
             animation: springUp 0.7s cubic-bezier(0.25, 1, 0.5, 1);
         }
-        .cash-label { font-size: 13px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-        .cash-amount { font-size: 34px; font-weight: 700; margin-top: 5px; letter-spacing: -1px; }
+        .cash-label { font-size: 13px; font-weight: 600; color: #666; text-transform: uppercase; }
+        .cash-amount { font-size: 34px; font-weight: 700; margin-top: 5px; }
 
-        /* Список карт с пружинным появлением */
         #cardsList { display: flex; flex-direction: column; gap: 12px; }
-
         .card-row {
             background: var(--card-gray); border-radius: 14px; padding: 14px 16px;
             display: flex; align-items: center; cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            animation: springUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+            transition: 0.3s; animation: springUp 0.8s backwards;
             border: 1px solid rgba(255,255,255,0.03);
         }
-
-        .card-row:active { transform: scale(0.96); background: #2c2c2e; }
-
-        .card-thumb { 
-            width: 52px; height: 33px; border-radius: 6px; margin-right: 15px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        
+        .card-thumb { width: 52px; height: 33px; border-radius: 6px; margin-right: 15px; }
         .sapphire-bg { background: linear-gradient(135deg, #0b1a30 0%, #000 100%); }
         .gold-bg { background: linear-gradient(135deg, #d4af37 0%, #8a6d1d 100%); }
-        .black-bg { background: #333; border: 1px solid #444; }
 
-        /* Overlay & Blur */
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); 
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(15px);
             display: none; z-index: 1000; align-items: flex-end;
         }
-
         .action-sheet {
             width: 100%; background: #1c1c1e; border-radius: 20px 20px 0 0;
             padding: 25px 20px 45px; box-sizing: border-box;
-            transform: translateY(100%); 
-            transition: transform 0.4s cubic-bezier(0.15, 1, 0.3, 1);
-            border-top: 1px solid rgba(255,255,255,0.1);
+            transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.15, 1, 0.3, 1);
         }
-
-        body.modal-open .overlay { display: flex; animation: fadeIn 0.3s; }
+        body.modal-open .overlay { display: flex; }
         body.modal-open .action-sheet { transform: translateY(0); }
-
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-
         .action-item {
             background: #2c2c2e; border-radius: 14px; padding: 18px;
-            text-decoration: none; color: #fff; text-align: center; 
-            font-weight: 600; transition: background 0.2s;
+            text-decoration: none; color: #fff; text-align: center; font-weight: 600;
         }
-        .action-item:active { background: #3a3a3c; transform: scale(0.95); }
+        .btn-cancel { width: 100%; background: #333; color: #fff; border: none; padding: 16px; border-radius: 14px; margin-top: 10px; }
 
-        .btn-delete {
-            width: 100%; background: rgba(255, 59, 48, 0.15); color: #ff3b30; 
-            border: none; padding: 16px; border-radius: 14px; margin-top: 20px;
-            font-weight: 600; font-size: 17px; transition: 0.2s;
-        }
-        .btn-delete:active { background: rgba(255, 59, 48, 0.3); transform: scale(0.98); }
-
-        .btn-cancel {
-            width: 100%; background: #333; color: #fff; border: none; 
-            padding: 16px; border-radius: 14px; margin-top: 10px; font-weight: 600;
-        }
-
-        @keyframes springUp { 
-            0% { opacity: 0; transform: translateY(40px) scale(0.95); } 
-            100% { opacity: 1; transform: translateY(0) scale(1); } 
-        }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes springUp { 0% { opacity: 0; transform: translateY(40px); } 100% { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body id="body">
     <header>
-        <h1>Wallet</h1>
-        <a href="register.html" class="add-btn">⊕</a>
+        <h1 id="headerTitle">Wallet</h1>
+        <a href="register_card.html" class="add-btn">⊕</a>
     </header>
 
     <div class="cash-card">
@@ -129,14 +71,12 @@
 
     <div class="overlay" onclick="closeMenu()">
         <div class="action-sheet" onclick="event.stopPropagation()">
-            <div id="sheetTitle" style="text-align:center; color:#8e8e93; margin-bottom:25px; font-size: 14px;"></div>
+            <div id="sheetTitle" style="text-align:center; color:#8e8e93; margin-bottom:25px;"></div>
             <div class="action-grid">
                 <a href="qr_pay.html" class="action-item">📷 QR-код</a>
                 <a href="transfer.html" class="action-item">💸 Перевести</a>
             </div>
-            
-            <button class="btn-delete" id="deleteBtn">Удалить карту</button>
-            <button onclick="closeMenu()" class="btn-cancel">Отмена</button>
+            <button onclick="closeMenu()" class="btn-cancel">Закрыть</button>
         </div>
     </div>
 
@@ -144,47 +84,58 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
         const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let currentCardId = null;
+        // 1. ПОЛУЧАЕМ ТЕКУЩЕГО ЮЗЕРА (из того, что мы делали вчера)
+        const currentUser = localStorage.getItem('walletUser');
 
-        db.ref('user_cards').on('value', (snapshot) => {
-            const data = snapshot.val();
+        if (!currentUser) {
+            window.location.href = 'index.html'; // Если не вошел — на вход
+        } else {
+            document.getElementById('headerTitle').innerText = 'Apple Pay';
+        }
+
+        // 2. СЛУШАЕМ ДАННЫЕ ТОЛЬКО ЭТОГО ПОЛЬЗОВАТЕЛЯ
+        db.ref('users/' + currentUser).on('value', (snapshot) => {
+            const userData = snapshot.val();
+            if (!userData) return;
+
             const list = document.getElementById('cardsList');
-            let total = 0;
-            let index = 0;
             list.innerHTML = '';
             
-            for (let id in data) {
-                total += parseFloat(data[id].balance || 0);
-                const delay = index * 0.08; 
-                list.innerHTML += `
-                    <div class="card-row" onclick="openMenu('${data[id].name}', '${data[id].digits}', '${id}')" style="animation-delay: ${delay}s">
-                        <div class="card-thumb ${data[id].style}"></div>
-                        <div style="flex:1">
-                            <div style="font-weight:600; font-size:17px;">${data[id].name}</div>
-                            <div style="color:#8e8e93; font-size:14px;">•••• ${data[id].digits} | ${data[id].balance.toLocaleString()} ₽</div>
-                        </div>
-                    </div>`;
-                index++;
+            // Если у юзера есть баланс в объекте пользователя
+            const balance = userData.balance || 0;
+            document.getElementById('totalBalance').innerText = balance.toLocaleString() + ' ₽';
+
+            // Если ты хранишь КАРТЫ внутри пользователя (правильный подход):
+            if (userData.cards) {
+                let index = 0;
+                for (let id in userData.cards) {
+                    const card = userData.cards[id];
+                    const delay = index * 0.08;
+                    list.innerHTML += `
+                        <div class="card-row" onclick="openMenu('${card.name}', '${card.digits}')" style="animation-delay: ${delay}s">
+                            <div class="card-thumb sapphire-bg"></div>
+                            <div style="flex:1">
+                                <div style="font-weight:600; font-size:17px;">${card.name}</div>
+                                <div style="color:#8e8e93; font-size:14px;">•••• ${card.digits}</div>
+                            </div>
+                        </div>`;
+                    index++;
+                }
+            } else {
+                // Если карт нет, просто показываем Apple Cash
+                list.innerHTML = '<div style="text-align:center; color:#333; margin-top:20px;">Нет активных карт</div>';
             }
-            document.getElementById('totalBalance').innerText = total.toLocaleString() + ' ₽';
         });
 
-        function openMenu(n, d, id) {
-            currentCardId = id;
-            document.getElementById('sheetTitle').innerText = n + ' •••• ' + d;
+        function openMenu(name, digits) {
+            document.getElementById('sheetTitle').innerText = name + ' •••• ' + digits;
             document.getElementById('body').classList.add('modal-open');
         }
 
         function closeMenu() { document.getElementById('body').classList.remove('modal-open'); }
-
-        document.getElementById('deleteBtn').onclick = function() {
-            if (currentCardId && confirm("Удалить карту?")) {
-                db.ref('user_cards/' + currentCardId).remove().then(() => closeMenu());
-            }
-        };
     </script>
 </body>
 </html>
