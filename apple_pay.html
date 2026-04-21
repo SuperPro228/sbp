@@ -13,7 +13,13 @@
             padding: 0 16px; overflow-x: hidden; -webkit-tap-highlight-color: transparent;
         }
         header { padding: 60px 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header-left { display: flex; flex-direction: column; }
         h1 { font-size: 34px; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
+        
+        /* Кнопка выхода в хедере */
+        .logout-link { color: var(--apple-red); font-size: 14px; text-decoration: none; margin-top: 4px; font-weight: 400; cursor: pointer; }
+        
+        .header-btns { display: flex; align-items: center; gap: 20px; }
         .add-btn { color: var(--apple-blue); font-size: 28px; text-decoration: none; cursor: pointer; }
         
         .cash-card {
@@ -38,7 +44,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
-        /* Сканер (на весь экран) */
         #reader { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             z-index: 2000; display: none; background: #000; 
@@ -77,8 +82,13 @@
     <div id="reader"></div>
 
     <header>
-        <h1 id="userHeader">Wallet</h1>
-        <a href="register.html" class="add-btn">⊕</a>
+        <div class="header-left">
+            <h1 id="userHeader">Wallet</h1>
+            <div class="logout-link" onclick="logout()">Выйти из Apple ID</div>
+        </div>
+        <div class="header-btns">
+            <a href="register.html" class="add-btn">⊕</a>
+        </div>
     </header>
 
     <div class="cash-card">
@@ -151,7 +161,6 @@
 
         function closeMenu() { document.getElementById('body').classList.remove('modal-open'); }
 
-        // Вернул функцию сканирования QR
         function startScan() {
             closeMenu();
             const readerDiv = document.getElementById('reader');
@@ -163,12 +172,10 @@
             html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
                 html5QrCode.stop().then(() => {
                     readerDiv.style.display = 'none';
-                    // Если это перевод человеку
                     if (decodedText.includes('USER:')) {
                         const target = decodedText.split('USER:')[1];
                         window.location.href = `transfer.html?target=USER:${target}`;
                     } else {
-                        // Если это оплата магазину
                         window.location.href = `transfer.html?target=${decodedText}`;
                     }
                 });
@@ -190,9 +197,12 @@
             }
         };
 
+        // ФУНКЦИЯ ВЫХОДА
         function logout() { 
-            localStorage.removeItem('walletUser'); 
-            window.location.href = 'index.html'; 
+            if(confirm("Вы уверены, что хотите выйти из Apple ID?")) {
+                localStorage.removeItem('walletUser'); 
+                window.location.href = 'index.html'; 
+            }
         }
     </script>
 </body>
