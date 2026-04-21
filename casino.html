@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Apple Clicker</title>
+    <style>
+        :root { --bg: #000; --card-gray: #1c1c1e; --apple-blue: #007aff; --text-main: #ffffff; --text-secondary: #8e8e93; }
+        body { 
+            margin: 0; background: var(--bg); color: var(--text-main); 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; 
+            display: flex; flex-direction: column; align-items: center;
+            height: 100vh; overflow: hidden; -webkit-tap-highlight-color: transparent;
+        }
+        header { width: 100%; padding: 60px 20px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; }
+        .back-btn { color: var(--apple-blue); text-decoration: none; font-size: 17px; font-weight: 400; }
+        
+        .balance-display { text-align: center; margin-top: 10px; }
+        .balance-label { font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+        .balance-amount { font-size: 48px; font-weight: 700; letter-spacing: -1px; margin-top: 5px; }
+
+        /* Кликер в стиле Apple */
+        .clicker-container { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
+        .apple-btn {
+            width: 220px; height: 220px;
+            background: var(--card-gray);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 90px; cursor: pointer; user-select: none;
+            transition: transform 0.08s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .apple-btn:active { transform: scale(0.92); background: #2c2c2e; }
+        
+        /* Всплывающий текст */
+        .plus-one {
+            position: absolute; color: #fff; font-weight: 600;
+            font-size: 26px; pointer-events: none; animation: floatUp 0.5s ease-out forwards;
+        }
+
+        /* Кнопка вывода (как в Wallet) */
+        .footer { width: 100%; padding: 30px 20px 50px; box-sizing: border-box; }
+        .withdraw-btn {
+            width: 100%; background: #fff; color: #000; border: none;
+            padding: 18px; border-radius: 16px; font-size: 17px; font-weight: 600; cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .withdraw-btn:active { opacity: 0.8; }
+
+        /* Модалка (Action Sheet style) */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            display: none; align-items: flex-end; z-index: 100;
+        }
+        .modal-content { 
+            background: var(--card-gray); width: 100%; padding: 30px 20px 50px; 
+            border-radius: 20px 20px 0 0; text-align: center; 
+            border-top: 1px solid rgba(255,255,255,0.1);
+            animation: slideUp 0.4s cubic-bezier(0.15, 1, 0.3, 1);
+        }
+        h3 { font-size: 20px; margin: 0 0 10px; }
+        select { 
+            width: 100%; background: #2c2c2e; color: #fff; border: 1px solid rgba(255,255,255,0.1); 
+            padding: 16px; border-radius: 12px; margin: 20px 0; font-size: 17px; outline: none;
+            appearance: none;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-120px) scale(1.2); }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="apple_pay.html" class="back-btn">Отмена</a>
+        <div style="font-weight: 600; font-size: 17px;">Clicker</div>
+        <div style="width: 50px;"></div>
+    </header>
+
+    <div class="balance-display">
+        <div class="balance-label">Счёт</div>
+        <div id="sessionBalance" class="balance-amount">0 ₽</div>
+    </div>
+
+    <div class="clicker-container">
+        <div class="apple-btn" id="clickBtn"></div>
+    </div>
+
+    <div class="footer">
+        <button class="withdraw-btn" onclick="openWithdraw()">Вывести средства</button>
+    </div>
+
+    <div class="modal" id="withdrawModal" onclick="closeWithdraw()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3>Выберите карту</h3>
+            <p style="color:var(--text-secondary); font-size: 15px;">Средства будут мгновенно зачислены на баланс Apple Cash.</p>
+            <select id="cardSelect"></select>
+            <button class="withdraw-btn" onclick="processWithdraw()">Подтвердить</button>
+            <button onclick="closeWithdraw()" style="background:none; border:none; color:var(--apple-blue); margin-top:20px; font-size: 17px; cursor:pointer;">Отменить</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const user = localStorage.getItem('walletUser');
+        let earned = 0;
+
+        if (!user) window.location.href = 'index.html';
+
+        const clickBtn = document.getElementById('clickBtn');
+        clickBtn.addEventListener('click', (e) => {
+            earned += 10;
+            document.getElementById('sessionBalance').innerText = earned.toLocaleString() + ' ₽';
+            
+            const plus = document.createElement('div');
+            plus.className = 'plus-one';
+            plus.innerText = '+10';
+            plus.style.left = e.clientX + 'px';
+            plus.style.top = e.clientY + 'px';
+            document.body.appendChild(plus);
+            setTimeout(() => plus.remove(), 500);
+        });
+
+        async function openWithdraw() {
+            if (earned <= 0) return;
+            
+            const select = document.getElementById('cardSelect');
+            select.innerHTML = '';
+            
+            const snap = await db.ref('users/' + user + '/cards').once('value');
+            const cards = snap.val();
+            
+            if (!cards) {
+                alert("Нет активных карт для вывода");
+                return;
+            }
+
+            Object.keys(cards).forEach(id => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.innerText = `${cards[id].name} (•••• ${cards[id].digits})`;
+                select.appendChild(option);
+            });
+
+            document.getElementById('withdrawModal').style.display = 'flex';
+        }
+
+        function closeWithdraw() { document.getElementById('withdrawModal').style.display = 'none'; }
+
+        async function processWithdraw() {
+            const cardId = document.getElementById('cardSelect').value;
+            const amount = earned;
+            
+            const userRef = db.ref('users/' + user);
+            const cardRef = db.ref('users/' + user + '/cards/' + cardId);
+            
+            const userSnap = await userRef.once('value');
+            const cardSnap = await cardRef.once('value');
+            
+            const newTotalBalance = (userSnap.val().balance || 0) + amount;
+            const newCardBalance = (parseFloat(cardSnap.val().balance) || 0) + amount;
+
+            await userRef.update({ balance: newTotalBalance });
+            await cardRef.update({ balance: newCardBalance });
+
+            earned = 0;
+            document.getElementById('sessionBalance').innerText = '0 ₽';
+            closeWithdraw();
+            alert("Вывод выполнен успешно");
+        }
+    </script>
+</body>
+</html>
