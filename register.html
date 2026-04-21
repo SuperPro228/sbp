@@ -24,6 +24,7 @@
             padding: 18px; border-radius: 14px; font-size: 17px; 
             font-weight: 600; margin-top: 40px; cursor: pointer;
         }
+        .btn-add:disabled { opacity: 0.5; }
     </style>
 </head>
 <body>
@@ -58,7 +59,7 @@
         if (!user) window.location.href = 'index.html';
 
         async function addCard() {
-            const name = document.getElementById('cardName').value;
+            const name = document.getElementById('cardName').value.trim();
             const digits = document.getElementById('cardDigits').value;
             const btn = document.getElementById('addBtn');
 
@@ -70,21 +71,35 @@
             btn.disabled = true;
 
             try {
-                // 1. Получаем список текущих карт пользователя
-                const snapshot = await db.ref('users/' + user + '/cards').once('value');
-                const cards = snapshot.val();
+                // 1. Получаем ВСЕХ пользователей из базы
+                const snapshot = await db.ref('users').once('value');
+                const allUsers = snapshot.val();
+                
+                let isGlobalDuplicate = false;
 
-                // 2. Проверяем, есть ли карта с такими же цифрами
-                if (cards) {
-                    const isDuplicate = Object.values(cards).some(card => card.digits === digits);
-                    if (isDuplicate) {
-                        alert("Карта с таким номером уже добавлена");
-                        btn.disabled = false;
-                        return;
+                // 2. Пробегаем циклом по каждому пользователю и каждой их карте
+                if (allUsers) {
+                    for (let username in allUsers) {
+                        const userCards = allUsers[username].cards;
+                        if (userCards) {
+                            for (let cardId in userCards) {
+                                if (userCards[cardId].digits === digits) {
+                                    isGlobalDuplicate = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (isGlobalDuplicate) break;
                     }
                 }
 
-                // 3. Если дублей нет, добавляем
+                if (isGlobalDuplicate) {
+                    alert("Ошибка: Карта с таким номером уже зарегистрирована в системе другим пользователем.");
+                    btn.disabled = false;
+                    return;
+                }
+
+                // 3. Если дублей нет во всей базе, добавляем карту текущему юзеру
                 await db.ref('users/' + user + '/cards').push({
                     name: name,
                     digits: digits,
@@ -94,7 +109,7 @@
                 window.location.href = 'apple_pay.html';
             } catch (e) {
                 console.error(e);
-                alert("Ошибка при добавлении");
+                alert("Ошибка при проверке данных");
                 btn.disabled = false;
             }
         }
