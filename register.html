@@ -3,35 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Добавление карты</title>
+    <title>Добавить карту - Wallet</title>
     <style>
-        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; padding: 40px 20px; }
-        h1 { font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 30px; }
-        .input-group { background: #1c1c1e; border-radius: 14px; padding: 5px 15px; margin-bottom: 20px; }
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; }
+        .cancel { color: #007aff; text-decoration: none; font-size: 17px; }
+        h1 { font-size: 32px; margin: 20px 0; }
+        
+        .form-group { background: #1c1c1e; border-radius: 14px; padding: 5px 15px; margin-top: 20px; }
         input { 
-            width: 100%; background: transparent; border: none; color: #fff; 
-            padding: 15px 0; font-size: 17px; outline: none; border-bottom: 0.5px solid #333;
+            width: 100%; background: none; border: none; color: #fff; 
+            padding: 15px 0; font-size: 17px; outline: none;
+            border-bottom: 0.5px solid #333;
         }
         input:last-child { border: none; }
-        .add-btn { 
-            width: 100%; background: #fff; color: #000; border: none; padding: 18px; 
-            border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-top: 20px;
+        input::placeholder { color: #555; }
+
+        .btn-add { 
+            background: #fff; color: #000; border: none; width: 100%; 
+            padding: 18px; border-radius: 14px; font-size: 17px; 
+            font-weight: 600; margin-top: 30px; cursor: pointer;
         }
-        .back-btn { display: block; text-align: center; color: #007aff; text-decoration: none; margin-top: 20px; }
+        .status-msg { color: #ff3b30; font-size: 14px; margin-top: 15px; text-align: center; display: none; }
     </style>
 </head>
 <body>
 
-    <h1>Новая карта</h1>
-
-    <div class="input-group">
-        <input type="text" id="cardName" placeholder="Название (например, Visa)">
-        <input type="number" id="cardDigits" placeholder="Последние 4 цифры" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4)">
-        <input type="number" id="cardBalance" placeholder="Начальный баланс">
+    <div class="header">
+        <a href="apple_pay.html" class="cancel">Отмена</a>
     </div>
 
-    <button class="add-btn" onclick="addCard()">Добавить в Wallet</button>
-    <a href="apple_pay.html" class="back-btn">Отмена</a>
+    <h1>Добавить карту</h1>
+    <p style="color: #8e8e93;">Введите данные вашей карты для привязки к Apple Cash.</p>
+
+    <div class="form-group">
+        <input type="text" id="cardName" placeholder="Название (например, Tinkoff)">
+        <input type="number" id="cardDigits" placeholder="Последние 4 цифры" oninput="if(this.value.length>4)this.value=this.value.slice(0,4)">
+        <input type="number" id="cardBalance" placeholder="Начальный баланс (₽)">
+    </div>
+
+    <div id="status" class="status-msg">Карта с такими цифрами уже существует!</div>
+    <button class="btn-add" id="saveBtn" onclick="addCard()">Добавить</button>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -40,43 +52,74 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Получаем имя текущего юзера
         const user = localStorage.getItem('walletUser');
+        if (!user) window.location.href = 'index.html';
 
         async function addCard() {
-            if (!user) {
-                alert("Ошибка: вы не авторизованы!");
-                window.location.href = 'index.html';
-                return;
-            }
-
             const name = document.getElementById('cardName').value;
             const digits = document.getElementById('cardDigits').value;
             const balance = parseFloat(document.getElementById('cardBalance').value) || 0;
+            const statusMsg = document.getElementById('status');
+            const btn = document.getElementById('saveBtn');
 
             if (!name || digits.length !== 4) {
                 alert("Введите название и 4 цифры карты");
                 return;
             }
 
-            // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: сохраняем ВНУТРЬ юзера
-            const newCardRef = db.ref('users/' + user + '/cards').push();
-            
-            await newCardRef.set({
-                name: name,
-                digits: digits,
-                balance: balance,
-                style: 'sapphire-bg' // стиль по умолчанию
-            });
+            btn.disabled = true;
+            btn.innerText = "Проверка...";
+            statusMsg.style.display = "none";
 
-            // Также обновляем общий баланс Apple Cash этого юзера
-            const userRef = db.ref('users/' + user);
-            const snap = await userRef.once('value');
-            const currentTotal = snap.val().balance || 0;
-            await userRef.update({ balance: currentTotal + balance });
+            try {
+                // 1. Проверяем ВСЕХ пользователей на наличие такой карты
+                const usersSnap = await db.ref('users').once('value');
+                let isDuplicate = false;
 
-            alert("Карта добавлена!");
-            window.location.href = 'apple_pay.html';
+                usersSnap.forEach((childSnap) => {
+                    const userData = childSnap.val();
+                    if (userData.cards) {
+                        Object.values(userData.cards).forEach(card => {
+                            if (card.digits === digits) {
+                                isDuplicate = true;
+                            }
+                        });
+                    }
+                });
+
+                if (isDuplicate) {
+                    statusMsg.innerText = "Карта с такими цифрами уже зарегистрирована!";
+                    statusMsg.style.display = "block";
+                    btn.disabled = false;
+                    btn.innerText = "Добавить";
+                    return;
+                }
+
+                // 2. Если дубликатов нет, создаем карту
+                const newCardRef = db.ref('users/' + user + '/cards').push();
+                await newCardRef.set({
+                    name: name,
+                    digits: digits,
+                    balance: balance
+                });
+
+                // 3. Обновляем общий баланс пользователя
+                const userRef = db.ref('users/' + user);
+                const currentSnap = await userRef.once('value');
+                const currentBalance = currentSnap.val().balance || 0;
+                
+                await userRef.update({
+                    balance: currentBalance + balance
+                });
+
+                window.location.href = 'apple_pay.html';
+
+            } catch (error) {
+                console.error(error);
+                alert("Ошибка при сохранении");
+                btn.disabled = false;
+                btn.innerText = "Добавить";
+            }
         }
     </script>
 </body>
