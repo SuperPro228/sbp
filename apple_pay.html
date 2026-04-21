@@ -21,7 +21,6 @@
         .header-btns { display: flex; align-items: center; gap: 20px; }
         .add-btn { color: var(--apple-blue); font-size: 28px; text-decoration: none; cursor: pointer; }
         
-        /* Карточка Apple Cash — теперь ведет в кликер */
         .cash-card {
             background: #fff; border-radius: 14px; padding: 20px; color: #000;
             margin-bottom: 30px; box-shadow: 0 10px 30px rgba(255,255,255,0.05);
@@ -47,7 +46,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
-        /* Стили Истории Операций */
         #historyList { background: var(--card-gray); border-radius: 14px; overflow: hidden; margin-bottom: 40px; }
         .history-item { 
             padding: 15px 16px; border-bottom: 0.5px solid #333; 
@@ -148,7 +146,6 @@
             document.getElementById('userHeader').innerText = user.charAt(0).toUpperCase() + user.slice(1);
         }
 
-        // Обновление баланса и списка карт
         db.ref('users/' + user).on('value', (snap) => {
             const data = snap.val();
             if (!data) return;
@@ -173,20 +170,22 @@
             }
         });
 
-        // Загрузка Истории
-        db.ref('users/' + user + '/history').orderByChild('timestamp').limitToLast(10).on('value', (snap) => {
+        // --- ИСПРАВЛЕННЫЙ БЛОК ЗАГРУЗКИ ИСТОРИИ ---
+        db.ref('users/' + user + '/history').on('value', (snap) => {
             const historyList = document.getElementById('historyList');
-            historyList.innerHTML = '';
-            const items = [];
+            const data = snap.val();
             
-            snap.forEach(child => { items.unshift(child.val()); });
-
-            if (items.length === 0) {
+            if (!data) {
                 historyList.innerHTML = '<div style="padding: 20px; text-align: center; color: #555;">Нет недавних операций</div>';
                 return;
             }
 
-            items.forEach(item => {
+            // Превращаем объект из Firebase в массив и сортируем по времени
+            const items = Object.keys(data).map(key => data[key]);
+            items.sort((a, b) => b.timestamp - a.timestamp);
+
+            historyList.innerHTML = '';
+            items.slice(0, 10).forEach(item => {
                 const isPlus = item.type === 'income' || item.type === 'casino';
                 const date = new Date(item.timestamp).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
                 
