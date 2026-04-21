@@ -2,36 +2,24 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Оплата СБП</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Перевод</title>
     <style>
-        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        #amountDisplay { font-size: 44px; font-weight: 700; margin: 40px 0 20px; }
-        .box { background: #1c1c1e; border-radius: 14px; width: 100%; padding: 15px; box-sizing: border-box; margin-bottom: 12px; }
-        label { color: #8e8e93; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 5px; font-weight: 600; }
-        select, input { background: none; border: none; color: #fff; font-size: 17px; width: 100%; outline: none; }
-        .pay-btn { background: #fff; color: #000; border: none; width: 100%; padding: 18px; border-radius: 14px; font-size: 17px; font-weight: 600; margin-top: 30px; }
-        .pay-btn:disabled { background: #333; color: #8e8e93; opacity: 0.6; }
-        input[readonly] { color: #8e8e93; }
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; padding: 20px; }
+        .input-group { background: #1c1c1e; border-radius: 14px; padding: 10px 20px; margin-top: 40px; }
+        input { width: 100%; background: none; border: none; color: #fff; padding: 15px 0; font-size: 18px; border-bottom: 0.5px solid #333; outline: none; }
+        input:last-child { border: none; }
+        .send-btn { width: 100%; background: #fff; color: #000; border: none; padding: 18px; border-radius: 14px; font-size: 18px; font-weight: 600; margin-top: 30px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div id="amountDisplay">1,500,000 ₽</div>
-    <div class="box">
-        <label>Выберите вашу карту</label>
-        <select id="cardSelect" onchange="validate()">
-            <option value="">Загрузка карт...</option>
-        </select>
+    <h1>Перевод</h1>
+    <div class="input-group">
+        <input type="number" id="cardNum" placeholder="Номер карты (4 цифры)">
+        <input type="number" id="amount" placeholder="Сумма перевода">
     </div>
-    <div class="box">
-        <label>Получатель</label>
-        <input type="text" value="Passat Store Official" readonly>
-    </div>
-    <div class="box">
-        <label>Сумма платежа</label>
-        <input type="number" id="priceInput" readonly>
-    </div>
-    <button id="payBtn" class="pay-btn" onclick="execute()" disabled>Подтвердить оплату</button>
+    <button class="send-btn" onclick="sendMoney()">Отправить</button>
+    <a href="apple_pay.html" style="display:block; text-align:center; color:#8e8e93; margin-top:20px; text-decoration:none;">Отмена</a>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -39,50 +27,39 @@
         const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        let myCards = {};
+        const myUser = localStorage.getItem('walletUser');
 
-        window.onload = () => {
-            const params = new URLSearchParams(window.location.search);
-            const a = params.get('amount') || "1500000";
-            document.getElementById('priceInput').value = a;
-            document.getElementById('amountDisplay').innerText = parseFloat(a).toLocaleString() + ' ₽';
-            
-            db.ref('user_cards').on('value', (snap) => {
-                myCards = snap.val() || {};
-                const select = document.getElementById('cardSelect');
-                const currentVal = select.value;
-                select.innerHTML = '<option value="">Выберите карту</option>';
-                for (let id in myCards) {
-                    const c = myCards[id];
-                    const opt = document.createElement('option');
-                    opt.value = id;
-                    opt.textContent = `${c.name} (•••• ${c.digits}) — ${c.balance} ₽`;
-                    select.appendChild(opt);
+        async function sendMoney() {
+            const cardNum = document.getElementById('cardNum').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+
+            if(!cardNum || !amount) return alert("Заполните поля");
+
+            // Ищем юзера с такой картой
+            const usersSnap = await db.ref('users').once('value');
+            let targetUser = null;
+
+            usersSnap.forEach(u => {
+                const data = u.val();
+                if(data.cards) {
+                    Object.values(data.cards).forEach(c => {
+                        if(c.digits == cardNum) targetUser = u.key;
+                    });
                 }
-                select.value = currentVal;
-                validate();
             });
-        };
 
-        function validate() {
-            const amt = 1500000;
-            const cardId = document.getElementById('cardSelect').value;
-            const display = document.getElementById('amountDisplay');
-            if (cardId && myCards[cardId]) {
-                const enough = myCards[cardId].balance >= amt;
-                display.style.color = enough ? "#34c759" : "#ff3b30";
-                document.getElementById('payBtn').disabled = !enough;
-            }
-        }
+            if(!targetUser) return alert("Карта не найдена");
 
-        async function execute() {
-            const myId = document.getElementById('cardSelect').value;
-            const amt = 1500000;
-            await db.ref('user_cards/' + myId).update({ balance: myCards[myId].balance - amt });
-            const storeSnap = await db.ref('store_info').once('value');
-            await db.ref('store_info').update({ balance: (storeSnap.val().balance || 0) + amt });
-            await db.ref('payment_sync').set({ status: 'paid', time: Date.now() });
-            window.location.href = `success.html?amt=${amt}`;
+            // Логика списания/начисления
+            const mySnap = await db.ref('users/' + myUser).once('value');
+            if(mySnap.val().balance < amount) return alert("Нет денег");
+
+            await db.ref('users/' + myUser).update({ balance: mySnap.val().balance - amount });
+            const tSnap = await db.ref('users/' + targetUser).once('value');
+            await db.ref('users/' + targetUser).update({ balance: (tSnap.val().balance || 0) + amount });
+
+            alert("Перевод выполнен!");
+            window.location.href = 'apple_pay.html';
         }
     </script>
 </body>
