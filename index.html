@@ -2,23 +2,82 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Apple ID Login</title>
     <style>
-        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        .auth-card { background: #1c1c1e; padding: 30px; border-radius: 20px; width: 100%; max-width: 320px; text-align: center; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: none; background: #2c2c2e; color: #fff; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 15px; border-radius: 12px; border: none; background: #fff; color: #000; font-weight: 600; cursor: pointer; margin-top: 10px; font-size: 16px; }
-        .toggle { color: #007aff; font-size: 14px; margin-top: 15px; cursor: pointer; display: block; }
+        :root { --apple-blue: #007aff; --apple-red: #ff3b30; }
+        body { 
+            background: #000; color: #fff; font-family: -apple-system, sans-serif; 
+            margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden;
+        }
+
+        /* Заставка (Splash Screen) */
+        #splash {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; align-items: center; justify-content: center;
+            z-index: 100; transition: opacity 0.8s ease;
+        }
+        #splash img { width: 100px; filter: brightness(100); animation: pulse 2s infinite ease-in-out; }
+
+        /* Карточка авторизации */
+        .auth-card { 
+            opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.15, 1, 0.3, 1); 
+            background: #1c1c1e; padding: 30px; border-radius: 24px; 
+            width: 100%; max-width: 320px; text-align: center; display: none;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .auth-card.show { opacity: 1; transform: translateY(0); display: block; }
+
+        input { 
+            width: 100%; padding: 16px; margin: 8px 0; border-radius: 12px; 
+            border: none; background: #2c2c2e; color: #fff; box-sizing: border-box; 
+            font-size: 17px; outline: none; transition: 0.3s;
+        }
+        input:focus { background: #3a3a3c; }
+
+        button { 
+            width: 100%; padding: 16px; border-radius: 12px; border: none; 
+            background: #fff; color: #000; font-weight: 600; cursor: pointer; 
+            margin-top: 15px; font-size: 17px; transition: 0.2s;
+        }
+        button:active { transform: scale(0.96); opacity: 0.9; }
+
+        .toggle { color: var(--apple-blue); font-size: 15px; margin-top: 20px; cursor: pointer; display: block; }
+
+        /* Загрузка на черном фоне */
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: none; align-items: center; justify-content: center;
+            z-index: 200;
+        }
+        .spinner {
+            width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+
+        /* Анимации */
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(5px); } }
+        .shake { animation: shake 0.4s; }
     </style>
 </head>
 <body>
-    <div class="auth-card">
-        <h1 id="title" style="margin-top:0">Apple ID</h1>
+
+    <div id="splash">
+        <img src="apple_logo.png" alt="Apple Logo">
+    </div>
+
+    <div class="auth-card" id="authCard">
+        <h1 id="title" style="margin-top:0; font-size: 28px;">Apple ID</h1>
         <input type="text" id="user" placeholder="Имя пользователя">
         <input type="password" id="pass" placeholder="Пароль">
         <button onclick="auth()" id="btn">Войти</button>
         <span class="toggle" onclick="toggleMode()" id="toggleText">Нет аккаунта? Создать</span>
+    </div>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -29,30 +88,84 @@
         const db = firebase.database();
         let isLogin = true;
 
+        // Показ сплэш-скрина
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('splash').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('splash').style.display = 'none';
+                    const card = document.getElementById('authCard');
+                    card.style.display = 'block';
+                    setTimeout(() => card.classList.add('show'), 50);
+                }, 800);
+            }, 2000);
+        };
+
         function toggleMode() {
             isLogin = !isLogin;
             document.getElementById('title').innerText = isLogin ? "Apple ID" : "Регистрация";
             document.getElementById('btn').innerText = isLogin ? "Войти" : "Создать";
             document.getElementById('toggleText').innerText = isLogin ? "Нет аккаунта? Создать" : "Уже есть аккаунт? Войти";
+            // Очистка полей при переключении
+            document.getElementById('user').value = "";
+            document.getElementById('pass').value = "";
         }
 
         async function auth() {
             const user = document.getElementById('user').value.trim().toLowerCase();
             const pass = document.getElementById('pass').value;
-            if (!user || !pass) return;
+            const loading = document.getElementById('loading-overlay');
+            const card = document.getElementById('authCard');
+
+            if (!user || !pass) {
+                card.classList.add('shake');
+                setTimeout(() => card.classList.remove('shake'), 400);
+                return;
+            }
+
+            loading.style.display = 'flex';
 
             if (isLogin) {
-                const snap = await db.ref('users/' + user).once('value');
-                const data = snap.val();
-                if (snap.exists() && data.pass === pass) {
-                    localStorage.setItem('walletUser', user);
-                    window.location.href = 'apple_pay.html';
-                } else { alert("Ошибка входа: проверьте данные"); }
+                try {
+                    const snap = await db.ref('users/' + user).once('value');
+                    const data = snap.val();
+                    
+                    setTimeout(() => {
+                        if (snap.exists() && data.pass === pass) {
+                            localStorage.setItem('walletUser', user);
+                            window.location.href = 'apple_pay.html';
+                        } else {
+                            loading.style.display = 'none';
+                            card.classList.add('shake');
+                            setTimeout(() => card.classList.remove('shake'), 400);
+                            alert("Ошибка входа: проверьте данные");
+                        }
+                    }, 1000);
+                } catch(e) { 
+                    loading.style.display = 'none';
+                    alert("Ошибка сети"); 
+                }
             } else {
-                const walletID = Math.floor(1000 + Math.random() * 9000);
-                await db.ref('users/' + user).set({ pass, balance: 10000, walletID });
-                alert("Аккаунт успешно создан!");
-                toggleMode();
+                // Регистрация (твой код)
+                try {
+                    const check = await db.ref('users/' + user).once('value');
+                    if(check.exists()) {
+                        loading.style.display = 'none';
+                        alert("Это имя уже занято");
+                        return;
+                    }
+                    const walletID = Math.floor(1000 + Math.random() * 9000);
+                    await db.ref('users/' + user).set({ pass, balance: 10000, walletID });
+                    
+                    setTimeout(() => {
+                        loading.style.display = 'none';
+                        alert("Аккаунт успешно создан!");
+                        toggleMode();
+                    }, 800);
+                } catch(e) {
+                    loading.style.display = 'none';
+                    alert("Ошибка при регистрации");
+                }
             }
         }
     </script>
