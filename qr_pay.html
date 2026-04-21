@@ -3,84 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Сканер QR</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <title>Мой QR - Wallet</title>
     <style>
         body { 
-            background: #000; margin: 0; color: #fff; 
-            font-family: -apple-system, sans-serif; overflow: hidden; 
+            background: #000; color: #fff; font-family: -apple-system, sans-serif; 
+            margin: 0; display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; min-height: 100vh; text-align: center;
         }
-        #reader { width: 100%; height: 100vh; }
+        .container { background: #1c1c1e; padding: 40px 20px; border-radius: 30px; width: 85%; max-width: 350px; }
+        h1 { font-size: 24px; margin-bottom: 10px; }
+        p { color: #8e8e93; margin-bottom: 30px; font-size: 16px; }
         
-        /* Рамка сканера */
-        .overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            border: 60px solid rgba(0,0,0,0.6); box-sizing: border-box;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            pointer-events: none;
+        .qr-wrapper { 
+            background: #fff; padding: 15px; border-radius: 20px; 
+            display: inline-block; margin-bottom: 20px;
         }
-        .scanner-frame { 
-            width: 260px; height: 260px; 
-            border: 3px solid #fff; border-radius: 24px; 
-            box-shadow: 0 0 20px rgba(255,255,255,0.2);
-        }
+        #qrImage { width: 200px; height: 200px; display: block; }
         
-        .hint {
-            position: absolute; bottom: 120px;
-            background: rgba(255,255,255,0.15);
-            padding: 12px 24px; border-radius: 20px;
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            font-size: 16px; font-weight: 500;
-        }
-
-        .btn-close {
-            position: absolute; top: 50px; right: 20px;
-            color: #fff; text-decoration: none; font-size: 18px;
-            background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px;
+        .user-id { font-weight: 700; color: #007aff; font-size: 20px; margin-top: 10px; }
+        
+        .back-btn { 
+            margin-top: 40px; color: #fff; text-decoration: none; 
+            background: #333; padding: 15px 40px; border-radius: 14px; 
+            font-weight: 600; width: 100%; box-sizing: border-box;
         }
     </style>
 </head>
 <body>
 
-    <div id="reader"></div>
-    
-    <a href="apple_pay.html" class="btn-close">Закрыть</a>
+    <div class="container">
+        <h1 id="displayName">Apple Pay</h1>
+        <p>Покажите этот код, чтобы получить перевод на свой аккаунт</p>
 
-    <div class="overlay">
-        <div class="scanner-frame"></div>
-        <div class="hint">Наведите на код оплаты</div>
+        <div class="qr-wrapper">
+            <img id="qrImage" src="" alt="QR Code">
+        </div>
+
+        <div class="user-id" id="userId">@ID</div>
+        
+        <a href="apple_pay.html" class="back-btn">Готово</a>
     </div>
 
     <script>
-        const html5QrCode = new Html5Qrcode("reader");
+        // 1. Получаем текущего пользователя
+        const user = localStorage.getItem('walletUser');
 
-        // Настройка запуска камеры
-        const config = { fps: 15, qrbox: { width: 260, height: 260 } };
+        if (!user) {
+            window.location.href = 'index.html';
+        } else {
+            // Отображаем имя
+            document.getElementById('displayName').innerText = user.charAt(0).toUpperCase() + user.slice(1);
+            document.getElementById('userId').innerText = '@' + user;
 
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            config,
-            (decodedText) => {
-                // Если считали код, останавливаем камеру
-                html5QrCode.stop().then(() => {
-                    
-                    // Проверяем формат кода (ID|СУММА или просто ID)
-                    let target, amount;
-                    if (decodedText.includes('|')) {
-                        [target, amount] = decodedText.split('|');
-                    } else {
-                        target = decodedText;
-                        amount = '';
-                    }
+            // 2. Генерируем ссылку для QR-кода
+            // Ссылка будет вести на твой transfer.html с параметром твоего ID
+            // Пример: https://твой-сайт.github.io/transfer.html?target=USER:имя
+            const currentURL = window.location.origin + window.location.pathname.replace('qr_pay.html', 'transfer.html');
+            const payLink = `${currentURL}?target=USER:${user}`;
 
-                    // ПЕРЕКИДЫВАЕМ НА ТВОЙ ТРАНСФЕР С ЗАПОЛНЕННЫМИ ДАННЫМИ
-                    window.location.href = `transfer.html?target=${target}&amount=${amount}`;
-                });
-            }
-        ).catch(err => {
-            console.error("Ошибка камеры:", err);
-            alert("Камера недоступна. Проверьте разрешения.");
-        });
+            // 3. Используем Google Charts API для создания QR
+            const qrUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(payLink)}&choe=UTF-8`;
+            
+            document.getElementById('qrImage').src = qrUrl;
+        }
     </script>
+
 </body>
 </html>
