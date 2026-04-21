@@ -2,24 +2,44 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Перевод</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Перевод - Wallet</title>
     <style>
-        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; padding: 20px; }
-        .input-group { background: #1c1c1e; border-radius: 14px; padding: 10px 20px; margin-top: 40px; }
-        input { width: 100%; background: none; border: none; color: #fff; padding: 15px 0; font-size: 18px; border-bottom: 0.5px solid #333; outline: none; }
-        input:last-child { border: none; }
-        .send-btn { width: 100%; background: #fff; color: #000; border: none; padding: 18px; border-radius: 14px; font-size: 18px; font-weight: 600; margin-top: 30px; cursor: pointer; }
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; text-align: center; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; }
+        .cancel { color: #007aff; text-decoration: none; font-size: 17px; }
+        h1 { font-size: 32px; margin: 20px 0; }
+        
+        .input-group { background: #1c1c1e; border-radius: 14px; padding: 10px 15px; margin-top: 30px; text-align: left; }
+        label { color: #8e8e93; font-size: 13px; text-transform: uppercase; margin-left: 5px; }
+        input { 
+            width: 100%; background: none; border: none; color: #fff; 
+            padding: 12px 0; font-size: 24px; outline: none; font-weight: 600;
+        }
+        
+        .btn-send { 
+            background: #fff; color: #000; border: none; width: 100%; 
+            padding: 18px; border-radius: 14px; font-size: 17px; 
+            font-weight: 600; margin-top: 40px; cursor: pointer;
+        }
+        .btn-send:disabled { opacity: 0.5; }
     </style>
 </head>
 <body>
-    <h1>Перевод</h1>
-    <div class="input-group">
-        <input type="number" id="cardNum" placeholder="Номер карты (4 цифры)">
-        <input type="number" id="amount" placeholder="Сумма перевода">
+
+    <div class="header">
+        <a href="apple_pay.html" class="cancel">Отмена</a>
     </div>
-    <button class="send-btn" onclick="sendMoney()">Отправить</button>
-    <a href="apple_pay.html" style="display:block; text-align:center; color:#8e8e93; margin-top:20px; text-decoration:none;">Отмена</a>
+
+    <h1>Перевод</h1>
+    <p id="targetInfo" style="color: #8e8e93;">Загрузка данных...</p>
+
+    <div class="input-group">
+        <label>Сумма перевода</label>
+        <input type="number" id="amountInput" placeholder="0 ₽" autofocus>
+    </div>
+
+    <button class="btn-send" id="sendBtn" onclick="sendMoney()">Отправить</button>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -27,39 +47,84 @@
         const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+
         const myUser = localStorage.getItem('walletUser');
+        const urlParams = new URLSearchParams(window.location.search);
+        let targetUser = urlParams.get('target');
+
+        // Очистка ника если он пришел с префиксом
+        if (targetUser && targetUser.startsWith('USER:')) {
+            targetUser = targetUser.split('USER:')[1];
+        }
+
+        if (!myUser) window.location.href = 'index.html';
+        if (!targetUser) {
+            alert("Получатель не указан");
+            window.location.href = 'apple_pay.html';
+        }
+
+        document.getElementById('targetInfo').innerText = `Кому: @${targetUser}`;
 
         async function sendMoney() {
-            const cardNum = document.getElementById('cardNum').value;
-            const amount = parseFloat(document.getElementById('amount').value);
+            const amount = parseFloat(document.getElementById('amountInput').value);
+            const btn = document.getElementById('sendBtn');
 
-            if(!cardNum || !amount) return alert("Заполните поля");
+            if (!amount || amount <= 0) return alert("Введите сумму");
+            if (myUser === targetUser) return alert("Нельзя переводить самому себе");
 
-            // Ищем юзера с такой картой
-            const usersSnap = await db.ref('users').once('value');
-            let targetUser = null;
+            btn.disabled = true;
+            btn.innerText = "Отправка...";
 
-            usersSnap.forEach(u => {
-                const data = u.val();
-                if(data.cards) {
-                    Object.values(data.cards).forEach(c => {
-                        if(c.digits == cardNum) targetUser = u.key;
-                    });
+            try {
+                const myRef = db.ref('users/' + myUser);
+                const targetRef = db.ref('users/' + targetUser);
+
+                const mySnap = await myRef.once('value');
+                const targetSnap = await targetRef.once('value');
+
+                if (!targetSnap.exists()) {
+                    alert("Пользователь не найден");
+                    btn.disabled = false;
+                    return;
                 }
-            });
 
-            if(!targetUser) return alert("Карта не найдена");
+                const myBalance = mySnap.val().balance || 0;
+                if (myBalance < amount) {
+                    alert("Недостаточно средств на Apple Cash");
+                    btn.disabled = false;
+                    return;
+                }
 
-            // Логика списания/начисления
-            const mySnap = await db.ref('users/' + myUser).once('value');
-            if(mySnap.val().balance < amount) return alert("Нет денег");
+                const targetBalance = targetSnap.val().balance || 0;
 
-            await db.ref('users/' + myUser).update({ balance: mySnap.val().balance - amount });
-            const tSnap = await db.ref('users/' + targetUser).once('value');
-            await db.ref('users/' + targetUser).update({ balance: (tSnap.val().balance || 0) + amount });
+                // 1. Обновляем балансы
+                await myRef.update({ balance: myBalance - amount });
+                await targetRef.update({ balance: targetBalance + amount });
 
-            alert("Перевод выполнен!");
-            window.location.href = 'apple_pay.html';
+                // 2. ЗАПИСЬ В ИСТОРИЮ ОТПРАВИТЕЛЯ
+                await db.ref('users/' + myUser + '/history').push({
+                    title: `Перевод @${targetUser}`,
+                    amount: amount,
+                    type: "expense",
+                    timestamp: Date.now()
+                });
+
+                // 3. ЗАПИСЬ В ИСТОРИЮ ПОЛУЧАТЕЛЯ
+                await db.ref('users/' + targetUser + '/history').push({
+                    title: `От @${myUser}`,
+                    amount: amount,
+                    type: "income",
+                    timestamp: Date.now()
+                });
+
+                alert("Перевод выполнен!");
+                window.location.href = 'apple_pay.html';
+
+            } catch (e) {
+                console.error(e);
+                alert("Ошибка сети");
+                btn.disabled = false;
+            }
         }
     </script>
 </body>
