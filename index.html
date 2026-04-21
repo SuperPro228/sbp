@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet Login</title>
+    <style>
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .auth-box { background: #1c1c1e; padding: 30px; border-radius: 20px; width: 100%; max-width: 320px; text-align: center; }
+        input { background: #2c2c2e; border: none; color: #fff; padding: 15px; width: 100%; border-radius: 12px; margin-bottom: 10px; box-sizing: border-box; }
+        button { background: #fff; color: #000; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: 600; cursor: pointer; }
+        .switch { font-size: 14px; color: #8e8e93; margin-top: 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="auth-box">
+        <h2 id="title">Вход</h2>
+        <input type="text" id="user" placeholder="Имя пользователя">
+        <input type="password" id="pass" placeholder="Пароль">
+        <button onclick="auth()" id="btn">Войти</button>
+        <div class="switch" onclick="toggleMode()" id="toggleText">Нет аккаунта? Регистрация</div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let isLogin = true;
+
+        function toggleMode() {
+            isLogin = !isLogin;
+            document.getElementById('title').innerText = isLogin ? "Вход" : "Регистрация";
+            document.getElementById('btn').innerText = isLogin ? "Войти" : "Создать";
+            document.getElementById('toggleText').innerText = isLogin ? "Нет аккаунта? Регистрация" : "Уже есть аккаунт? Войти";
+        }
+
+        async function auth() {
+            const user = document.getElementById('user').value.toLowerCase();
+            const pass = document.getElementById('pass').value;
+
+            if (isLogin) {
+                const snap = await db.ref('users/' + user).once('value');
+                const data = snap.val();
+                if (data && data.pass === pass) {
+                    localStorage.setItem('walletUser', user);
+                    window.location.href = 'wallet.html';
+                } else { alert("Неверный логин или пароль"); }
+            } else {
+                const walletID = Math.floor(1000 + Math.random() * 9000).toString(); // Генерация 4 цифр
+                await db.ref('users/' + user).set({
+                    pass: pass,
+                    balance: 1000, // Бонус при регистрации
+                    walletID: walletID
+                });
+                alert("Аккаунт создан! Теперь войдите.");
+                toggleMode();
+            }
+        }
+    </script>
+</body>
+</html>
