@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Games — Apple Wallet</title>
+    <style>
+        :root { 
+            --bg: #000; --card-gray: #1c1c1e; --apple-blue: #007aff; 
+            --text-main: #ffffff; --text-secondary: #8e8e93; 
+        }
+        body { 
+            margin: 0; background: var(--bg); color: var(--text-main); 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; 
+            display: flex; flex-direction: column; min-height: 100vh;
+        }
+
+        header { 
+            padding: 60px 20px 20px; box-sizing: border-box; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .back-btn { color: var(--apple-blue); text-decoration: none; font-size: 17px; font-weight: 400; }
+        
+        .title { font-size: 34px; font-weight: 700; padding: 0 20px; margin-bottom: 10px; }
+
+        .balance-section {
+            margin: 10px 20px 25px; padding: 20px;
+            background: var(--card-gray); border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .bal-label { font-size: 13px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 5px; font-weight: 600; }
+        .bal-val { font-size: 28px; font-weight: 700; color: #fff; }
+
+        .games-list { display: flex; flex-direction: column; gap: 12px; padding: 0 20px; }
+
+        .game-item {
+            background: var(--card-gray); border-radius: 18px; padding: 16px;
+            display: flex; align-items: center; text-decoration: none; color: #fff;
+            transition: transform 0.1s, background 0.2s; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .game-item:active { transform: scale(0.97); background: #2c2c2e; }
+
+        .game-icon-box {
+            width: 54px; height: 54px; border-radius: 12px; background: #000;
+            display: flex; align-items: center; justify-content: center; font-size: 28px;
+            margin-right: 16px; overflow: hidden;
+        }
+        .game-icon-box img { width: 35px; height: 35px; object-fit: contain; }
+
+        .game-info { flex: 1; }
+        .game-name { font-size: 17px; font-weight: 600; margin-bottom: 2px; }
+        .game-desc { font-size: 14px; color: var(--text-secondary); }
+        .chevron { color: #3a3a3c; font-size: 20px; font-weight: 300; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="apple_pay.html" class="back-btn">Готово</a>
+        <div style="font-weight: 600; font-size: 17px;">Развлечения</div>
+        <div style="width: 50px;"></div>
+    </header>
+
+    <div class="title">Игры</div>
+
+    <div class="balance-section">
+        <div class="bal-label">Доступный баланс</div>
+        <div class="bal-val" id="totalBalance">0 ₽</div>
+    </div>
+
+    <div class="games-list">
+        <a href="casino.html" class="game-item">
+            <div class="game-icon-box">
+                <img src="coin.png" alt="coin">
+            </div>
+            <div class="game-info">
+                <div class="game-name">Apple Clicker</div>
+                <div class="game-desc">Зарабатывай на тапах</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
+
+        <a href="casebattlemain.html" class="game-item">
+            <div class="game-icon-box" style="background: linear-gradient(135deg, #ffd700, #ff8c00);">📦</div>
+            <div class="game-info">
+                <div class="game-name">Case Battle</div>
+                <div class="game-desc">Открывай кейсы и выбивай скины</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
+
+        <a href="crash.html" class="game-item">
+            <div class="game-icon-box" style="background: linear-gradient(135deg, #ff5e62, #ff9966);">🚀</div>
+            <div class="game-info">
+                <div class="game-name">Rocket Crash</div>
+                <div class="game-desc">Успей забрать икс до взрыва</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
+
+        <a href="slots.html" class="game-item">
+            <div class="game-icon-box" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">🎰</div>
+            <div class="game-info">
+                <div class="game-name">Слоты</div>
+                <div class="game-desc">Испытай удачу в автоматах</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const user = localStorage.getItem('walletUser');
+
+        if (!user) window.location.href = 'index.html';
+
+        db.ref('users/' + user + '/balance').on('value', s => {
+            const bal = s.val() || 0;
+            document.getElementById('totalBalance').innerText = bal.toLocaleString() + ' ₽';
+        });
+    </script>
+</body>
+</html>

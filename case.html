@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CaseBattle — Открытие</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0c0e; --card-bg: #121417; --accent: #ffcc00; --border: #1f2228;
+            --rare-blue: #4b69ff; --rare-purple: #8847ff; --rare-pink: #d32ce6; --rare-red: #eb4b4b; --rare-gold: #caab05;
+        }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        header { padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.4); }
+        .logo { font-size: 20px; font-weight: 900; text-decoration: none; color: #fff; text-transform: uppercase; }
+        .logo span { color: var(--accent); }
+        #balance { font-weight: 900; color: var(--accent); font-size: 18px; }
+
+        .case-container { max-width: 1200px; margin: 50px auto; text-align: center; }
+        .price-tag { color: var(--accent); font-size: 24px; font-weight: 800; margin-bottom: 40px; }
+
+        .roulette-wrapper { position: relative; width: 100%; height: 180px; background: #0e1013; border: 1px solid var(--border); margin: 40px 0; overflow: hidden; display: flex; align-items: center; }
+        .pointer { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: var(--accent); z-index: 10; transform: translateX(-50%); box-shadow: 0 0 15px var(--accent); }
+        .roulette-tape { display: flex; position: absolute; left: 0; transition: transform 6s cubic-bezier(0.15, 0, 0.05, 1); }
+        
+        .skin-card { min-width: 160px; height: 140px; background: var(--card-bg); margin: 10px; border-radius: 12px; border-bottom: 4px solid var(--rare-blue); display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+        .skin-card img { width: 110px; height: 80px; object-fit: contain; }
+        
+        .skin-name { font-size: 11px; font-weight: 700; margin-top: 5px; text-align: center; padding: 0 5px; }
+        .skin-price { font-size: 10px; color: var(--accent); }
+
+        .open-btn { background: var(--accent); color: #000; border: none; padding: 20px 60px; border-radius: 12px; font-size: 18px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: 0.3s; }
+        .open-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .loot-preview { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 60px; padding: 20px; }
+        .loot-item { width: 140px; padding: 15px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+        .loot-item img { width: 80px; margin-bottom: 10px; }
+        .loot-item .p { color: var(--accent); font-size: 13px; font-weight: 800; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="casebattlemain.html" class="logo">CASE<span>BATTLE</span></a>
+        <div id="balance">0 ₽</div>
+    </header>
+
+    <div class="case-container">
+        <h1 id="caseTitle" style="font-weight: 900;">ЗАГРУЗКА...</h1>
+        <div class="price-tag" id="casePrice">0 ₽</div>
+        <div class="roulette-wrapper">
+            <div class="pointer"></div>
+            <div class="roulette-tape" id="tape"></div>
+        </div>
+        <button class="open-btn" id="spinBtn" onclick="openCase()">Открыть кейс</button>
+        <div class="loot-preview" id="preview"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const user = localStorage.getItem('walletUser');
+
+        const caseData = {
+            'marka': { name: "КЕЙС МАРКА", price: 450, items: [
+                { name: "M4A4 | Вой", price: 150000, rarity: "var(--rare-gold)", img: "img/skins/howl.png", chance: 0.1 },
+                { name: "AWP | Азимов", price: 12000, rarity: "var(--rare-red)", img: "img/skins/asiimov.png", chance: 2 },
+                { name: "AK-47 | Закалка", price: 15000, rarity: "var(--rare-pink)", img: "img/skins/case_hardened.png", chance: 3 },
+                { name: "P250 | Валентность", price: 25, rarity: "var(--rare-blue)", img: "img/skins/valence.png", chance: 50 },
+                { name: "Glock | Яблоко", price: 90, rarity: "var(--rare-blue)", img: "img/skins/apple.png", chance: 44.9 }
+            ]},
+            'jurfak': { name: "ЮРФАК", price: 89, items: [
+                { name: "P250 | Валентность", price: 25, rarity: "var(--rare-blue)", img: "img/skins/valence.png", chance: 70 },
+                { name: "Glock | Яблоко", price: 90, rarity: "var(--rare-blue)", img: "img/skins/apple.png", chance: 25 },
+                { name: "USP-S | Сайрекс", price: 400, rarity: "var(--rare-purple)", img: "img/skins/cyrex.png", chance: 5 }
+            ]},
+            'filfak': { name: "ФИЛФАК", price: 189, items: [
+                { name: "Glock | Дух воды", price: 500, rarity: "var(--rare-purple)", img: "img/skins/water_elemental.png", chance: 20 },
+                { name: "Deagle | Заговор", price: 650, rarity: "var(--rare-purple)", img: "img/skins/conspiracy.png", chance: 15 },
+                { name: "P250 | Валентность", price: 25, rarity: "var(--rare-blue)", img: "img/skins/valence.png", chance: 65 }
+            ]},
+            'fizfak': { name: "ФИЗФАК", price: 350, items: [
+                { name: "Deagle | Код красный", price: 3200, rarity: "var(--rare-red)", img: "img/skins/code_red.png", chance: 5 },
+                { name: "M4A1-S | Чистая вода", price: 1400, rarity: "var(--rare-purple)", img: "img/skins/bright_water.png", chance: 25 },
+                { name: "Glock | Яблоко", price: 90, rarity: "var(--rare-blue)", img: "img/skins/apple.png", chance: 70 }
+            ]},
+            'himfak': { name: "ХИМФАК", price: 850, items: [
+                { name: "AK-47 | Неоновая революция", price: 5500, rarity: "var(--rare-red)", img: "img/skins/neon_revolution.png", chance: 10 },
+                { name: "5-7 | Скоростной зверь", price: 2800, rarity: "var(--rare-red)", img: "img/skins/hyper_beast.png", chance: 30 },
+                { name: "USP-S | Сайрекс", price: 400, rarity: "var(--rare-purple)", img: "img/skins/cyrex.png", chance: 60 }
+            ]},
+            'vsemfak': { name: "ВСЕМФАК", price: 2500, items: [
+                { name: "Butterfly | Fade", price: 250000, rarity: "var(--rare-gold)", img: "img/skins/butterfly_fade.png", chance: 1 },
+                { name: "M4A4 | Вой", price: 150000, rarity: "var(--rare-gold)", img: "img/skins/howl.png", chance: 4 },
+                { name: "AK-47 | Неоновая революция", price: 5500, rarity: "var(--rare-red)", img: "img/skins/neon_revolution.png", chance: 95 }
+            ]}
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const caseId = urlParams.get('id') || 'marka';
+        const currentCase = caseData[caseId];
+        let balance = 0, isSpinning = false;
+
+        function init() {
+            if(!currentCase) return document.body.innerHTML = "<h1>Кейс не найден!</h1>";
+            
+            document.getElementById('caseTitle').innerText = currentCase.name;
+            document.getElementById('casePrice').innerText = currentCase.price + " ₽";
+            const tape = document.getElementById('tape'), preview = document.getElementById('preview');
+            
+            currentCase.items.sort((a,b) => a.price - b.price).forEach(s => {
+                preview.innerHTML += `<div class="loot-item" style="border-bottom: 3px solid ${s.rarity}"><img src="${s.img}"><div>${s.name}</div><div class="p">${s.price} ₽</div></div>`;
+            });
+            
+            for(let i=0; i<80; i++) tape.appendChild(createCard(getRandomItem()));
+        }
+
+        function getRandomItem() {
+            let rand = Math.random() * 100;
+            let cumulative = 0;
+            for (let item of currentCase.items) {
+                cumulative += item.chance;
+                if (rand <= cumulative) return item;
+            }
+            return currentCase.items[currentCase.items.length - 1];
+        }
+
+        function createCard(s) {
+            const div = document.createElement('div'); div.className = 'skin-card'; div.style.borderBottomColor = s.rarity;
+            div.innerHTML = `<img src="${s.img}"><div class="skin-name">${s.name}</div><div class="skin-price">${s.price} ₽</div>`; return div;
+        }
+
+        db.ref('users/' + user).on('value', s => { 
+            balance = s.val()?.balance || 0; 
+            document.getElementById('balance').innerText = balance.toLocaleString() + ' ₽'; 
+        });
+
+        async function openCase() {
+            if (isSpinning || balance < currentCase.price) return alert("Недостаточно средств!");
+            isSpinning = true; document.getElementById('spinBtn').disabled = true;
+            
+            balance -= currentCase.price;
+            await db.ref('users/' + user).update({ balance: balance });
+
+            const tape = document.getElementById('tape'); tape.style.transition = 'none'; tape.style.transform = 'translateX(0)';
+            const winIndex = 70;
+            const winningSkin = getRandomItem();
+            
+            tape.innerHTML = '';
+            for(let i=0; i<winIndex+10; i++) {
+                const s = (i === winIndex) ? winningSkin : getRandomItem();
+                tape.appendChild(createCard(s));
+            }
+
+            setTimeout(() => {
+                const cardWidth = 180;
+                const containerWidth = document.querySelector('.roulette-wrapper').offsetWidth;
+                const targetPos = (winIndex * cardWidth) + (cardWidth / 2) - (containerWidth / 2);
+                tape.style.transition = 'transform 6s cubic-bezier(0.15, 0, 0.05, 1)';
+                tape.style.transform = `translateX(-${targetPos}px)`;
+            }, 50);
+
+            setTimeout(async () => {
+                await db.ref('users/' + user + '/inventory').push(winningSkin);
+                alert(`Выпало: ${winningSkin.name}!`);
+                isSpinning = false; document.getElementById('spinBtn').disabled = false;
+            }, 6500);
+        }
+        init();
+    </script>
+</body>
+</html>

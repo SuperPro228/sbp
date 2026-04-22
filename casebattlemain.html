@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CaseBattle — Главная</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0c0e; --card-bg: #121417; --accent: #ffcc00; --border: #1f2228;
+            --text-main: #ffffff; --text-dim: #6c727a;
+        }
+        body { margin: 0; background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; }
+        
+        header { 
+            padding: 15px 50px; display: flex; justify-content: space-between; align-items: center; 
+            background: rgba(0,0,0,0.6); border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 100; backdrop-filter: blur(15px);
+        }
+        
+        .logo { font-size: 22px; font-weight: 900; text-transform: uppercase; color: #fff; text-decoration: none; letter-spacing: 1px; }
+        .logo span { color: var(--accent); }
+        
+        nav { display: flex; gap: 30px; align-items: center; }
+        nav a { color: var(--text-dim); text-decoration: none; font-weight: 700; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
+        nav a:hover, nav a.active { color: var(--accent); }
+
+        .user-controls { display: flex; align-items: center; gap: 20px; }
+        .balance-box { 
+            background: rgba(255, 204, 0, 0.1); border: 1px solid rgba(255, 204, 0, 0.2); 
+            padding: 8px 18px; border-radius: 10px; color: var(--accent); font-weight: 900; 
+        }
+
+        /* Живая лента дропа (декоративно) */
+        .live-feed { background: #08090a; height: 60px; display: flex; align-items: center; gap: 10px; padding: 0 50px; overflow: hidden; border-bottom: 1px solid var(--border); }
+        .feed-item { min-width: 50px; height: 40px; background: var(--card-bg); border-radius: 5px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; }
+        .feed-item img { height: 25px; }
+
+        main { padding: 40px 50px; max-width: 1400px; margin: 0 auto; }
+        
+        .section-header { 
+            display: flex; align-items: center; gap: 15px; margin-bottom: 30px; 
+            font-size: 12px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; 
+        }
+        .section-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        .case-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; }
+        .case-card { 
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 24px; 
+            padding: 30px 20px; text-align: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            cursor: pointer; position: relative; overflow: hidden;
+        }
+        .case-card:hover { transform: translateY(-10px); border-color: var(--accent); box-shadow: 0 10px 30px rgba(255, 204, 0, 0.1); }
+        
+        .case-img-container { height: 130px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .case-img { width: 140px; transition: 0.3s; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5)); }
+        .case-card:hover .case-img { transform: scale(1.1) rotate(5deg); }
+
+        .case-name { font-size: 16px; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; display: block; color: #fff; }
+        .case-price { 
+            display: inline-block; background: #000; padding: 10px 30px; border-radius: 12px; 
+            font-weight: 900; color: var(--accent); border: 1px solid var(--border); transition: 0.3s;
+        }
+        .case-card:hover .case-price { background: var(--accent); color: #000; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="casebattlemain.html" class="logo">CASE<span>BATTLE</span></a>
+        <nav>
+            <a href="casebattlemain.html" class="active">Кейсы</a>
+            <a href="upgrade.html">Апгрейд</a> <a href="inventory.html">Инвентарь</a> </nav>
+        <div class="user-controls">
+            <div class="balance-box" id="balance">0 ₽</div>
+        </div>
+    </header>
+
+    <div class="live-feed" id="liveFeed">
+        </div>
+
+    <main>
+        <div class="section-header">Лимитированные коллекции</div>
+        <div class="case-grid" id="specialGrid"></div>
+
+        <div class="section-header" style="margin-top: 50px;">Все кейсы</div>
+        <div class="case-grid" id="caseGrid"></div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const user = localStorage.getItem('walletUser');
+
+        const specialCases = [
+            { id: 'marka', name: 'КЕЙС МАРКА', price: 450, img: 'img/cases/marka.png' }
+        ];
+
+        const standardCases = [
+            { id: 'jurfak', name: 'Юрфак', price: 89, img: 'img/cases/jurfak.png' },
+            { id: 'filfak', name: 'Филфак', price: 189, img: 'img/cases/filfak.png' },
+            { id: 'fizfak', name: 'Физфак', price: 350, img: 'img/cases/fizfak.png' },
+            { id: 'himfak', name: 'Химфак', price: 850, img: 'img/cases/himfak.png' },
+            { id: 'vsemfak', name: 'Всемфак', price: 2500, img: 'img/cases/vsemfak.png' }
+        ];
+
+        // Синхронизация баланса и живой ленты
+        db.ref('users/' + user).on('value', s => {
+            const data = s.val() || {};
+            document.getElementById('balance').innerText = (data.balance || 0).toLocaleString() + ' ₽';
+            
+            // Заполнение ленты вашими предметами из инвентаря
+            const feed = document.getElementById('liveFeed');
+            feed.innerHTML = '';
+            if(data.inventory) {
+                Object.values(data.inventory).slice(-10).reverse().forEach(item => {
+                    feed.innerHTML += `<div class="feed-item" style="border-color:${item.rarity}"><img src="${item.img}"></div>`;
+                });
+            }
+        });
+
+        function render(data, gridId) {
+            const grid = document.getElementById(gridId);
+            data.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'case-card';
+                div.onclick = () => window.location.href = `case.html?id=${c.id}`;
+                div.innerHTML = `
+                    <div class="case-img-container">
+                        <img src="${c.img}" class="case-img" onerror="this.src='img/cases/default.png'">
+                    </div>
+                    <span class="case-name">${c.name}</span>
+                    <div class="case-price">${c.price} ₽</div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        render(specialCases, 'specialGrid');
+        render(standardCases, 'caseGrid');
+    </script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Апгрейд — CaseBattle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg: #0b0c0e; --card-bg: #121417; --accent: #ffcc00; --border: #1f2228; 
+            --rare-blue: #4b69ff; --rare-purple: #8847ff; --rare-pink: #d32ce6; --rare-red: #eb4b4b; --rare-gold: #caab05;
+            --win-green: #00ff88;
+        }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; text-align: center; margin: 0; padding-bottom: 50px; overflow-x: hidden; }
+        header { padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); margin-bottom: 30px; background: rgba(0,0,0,0.4); }
+        .logo { font-size: 20px; font-weight: 900; text-decoration: none; color: #fff; }
+        .logo span { color: var(--accent); }
+        #balance { font-weight: 900; color: var(--accent); }
+
+        .upgrade-area { display: flex; justify-content: center; align-items: center; gap: 40px; padding: 20px; flex-wrap: wrap; }
+        .slot { width: 220px; height: 280px; background: var(--card-bg); border: 2px dashed var(--border); border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: 0.3s; }
+        .slot.active { border-style: solid; border-color: var(--accent); box-shadow: 0 0 20px rgba(255, 204, 0, 0.1); }
+        .slot img { width: 140px; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5)); }
+
+        /* КРУГ И ИГЛА */
+        .wheel-container { position: relative; width: 280px; height: 280px; }
+        #upgradeCanvas { transform: rotate(-90deg); } /* Чтобы 0 градусов был сверху */
+        
+        .needle {
+            position: absolute; top: 0; left: 50%; width: 4px; height: 50%;
+            background: #fff; transform-origin: bottom center;
+            transform: translateX(-50%) rotate(0deg); z-index: 10;
+            border-radius: 2px; transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1);
+            box-shadow: 0 0 15px rgba(255,255,255,0.4);
+        }
+        .needle::before {
+            content: ''; position: absolute; top: -8px; left: -6px;
+            border-left: 8px solid transparent; border-right: 8px solid transparent;
+            border-bottom: 12px solid #fff;
+        }
+
+        .center-stats {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; pointer-events: none;
+        }
+        #chanceDisplay { font-size: 32px; font-weight: 900; color: #fff; }
+
+        .btn-up { background: var(--accent); padding: 20px 80px; border-radius: 15px; border: none; font-weight: 900; font-size: 20px; cursor: pointer; margin-top: 40px; transition: 0.3s; }
+        .btn-up:hover { transform: scale(1.05); }
+        .btn-up:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .lists-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        .list-box { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 20px; padding: 20px; }
+        .inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; height: 300px; overflow-y: auto; }
+        
+        .mini-card { background: var(--card-bg); padding: 10px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
+        .mini-card:hover { border-color: var(--accent); }
+        .mini-card img { width: 70px; height: 50px; object-fit: contain; }
+        .mini-card.selected { border-color: var(--accent); background: rgba(255, 204, 0, 0.05); }
+
+        /* OVERLAY */
+        .status-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .status-msg { font-size: 48px; font-weight: 900; }
+    </style>
+</head>
+<body>
+
+    <div class="status-overlay" id="overlay">
+        <div class="status-msg" id="statusTitle">УСПЕХ</div>
+        <div id="statusSkin" style="margin-top: 20px;"></div>
+    </div>
+
+    <header>
+        <a href="casebattlemain.html" class="logo">CASE<span>BATTLE</span></a>
+        <div id="balance">0 ₽</div>
+    </header>
+
+    <div class="upgrade-area">
+        <div class="slot" id="mySlot">Выберите скин</div>
+        
+        <div class="wheel-container">
+            <canvas id="upgradeCanvas" width="280" height="280"></canvas>
+            <div class="needle" id="needle"></div>
+            <div class="center-stats">
+                <div id="chanceDisplay">0.00%</div>
+                <div style="font-size: 10px; color: #666; font-weight: 700;">ШАНС</div>
+            </div>
+        </div>
+
+        <div class="slot" id="targetSlot">Выберите цель</div>
+    </div>
+
+    <button class="btn-up" id="upBtn" onclick="startUpgrade()">НАЧАТЬ АПГРЕЙД</button>
+
+    <div class="lists-container">
+        <div class="list-box">
+            <h3 style="color: var(--accent); font-size: 14px;">ВАШ ИНВЕНТАРЬ</h3>
+            <div class="inv-grid" id="myInv"></div>
+        </div>
+        <div class="list-box">
+            <h3 style="color: var(--rare-blue); font-size: 14px;">ДОСТУПНЫЕ СКИНЫ</h3>
+            <div class="inv-grid" id="allSkinsInv"></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const user = localStorage.getItem('walletUser');
+
+        const canvas = document.getElementById('upgradeCanvas');
+        const ctx = canvas.getContext('2d');
+        let selectedMy = null, selectedTarget = null, balance = 0, spinning = false;
+
+        const allPossibleSkins = [
+            { name: "P250 | Валентность", price: 25, img: "img/skins/valence.png", rarity: "var(--rare-blue)" },
+            { name: "Glock | Яблоко", price: 90, img: "img/skins/apple.png", rarity: "var(--rare-blue)" },
+            { name: "USP-S | Сайрекс", price: 400, img: "img/skins/cyrex.png", rarity: "var(--rare-purple)" },
+            { name: "Glock | Дух воды", price: 500, img: "img/skins/water_elemental.png", rarity: "var(--rare-purple)" },
+            { name: "Deagle | Заговор", price: 650, img: "img/skins/conspiracy.png", rarity: "var(--rare-purple)" },
+            { name: "M4A1-S | Чистая вода", price: 1400, img: "img/skins/bright_water.png", rarity: "var(--rare-purple)" },
+            { name: "5-7 | Скоростной зверь", price: 2800, img: "img/skins/hyper_beast.png", rarity: "var(--rare-red)" },
+            { name: "Deagle | Код красный", price: 3200, img: "img/skins/code_red.png", rarity: "var(--rare-red)" },
+            { name: "AK-47 | Неоновая революция", price: 5500, img: "img/skins/neon_revolution.png", rarity: "var(--rare-red)" },
+            { name: "AWP | Азимов", price: 12000, img: "img/skins/asiimov.png", rarity: "var(--rare-red)" },
+            { name: "AK-47 | Закалка", price: 15000, img: "img/skins/case_hardened.png", rarity: "var(--rare-pink)" },
+            { name: "M4A4 | Вой", price: 150000, img: "img/skins/howl.png", rarity: "var(--rare-gold)" },
+            { name: "Butterfly | Fade", price: 250000, img: "img/skins/butterfly_fade.png", rarity: "var(--rare-gold)" }
+        ].sort((a,b) => a.price - b.price);
+
+        function draw(chance) {
+            const cx = 140, cy = 140, r = 120;
+            ctx.clearRect(0, 0, 280, 280);
+            // Фон круга
+            ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.strokeStyle = '#1f2228'; ctx.lineWidth = 12; ctx.stroke();
+            // Сектор выигрыша
+            if (chance > 0) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, (Math.PI * 2) * (chance / 100));
+                ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.stroke();
+            }
+        }
+
+        function init() {
+            const grid = document.getElementById('allSkinsInv');
+            allPossibleSkins.forEach(item => {
+                const card = document.createElement('div'); card.className = 'mini-card';
+                card.innerHTML = `<img src="${item.img}"><br><b>${item.price} ₽</b>`;
+                card.onclick = () => {
+                    selectedTarget = item;
+                    document.querySelectorAll('#allSkinsInv .mini-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    updateUI();
+                };
+                grid.appendChild(card);
+            });
+            draw(0);
+        }
+
+        db.ref('users/' + user).on('value', s => {
+            const data = s.val() || {}; balance = data.balance || 0;
+            document.getElementById('balance').innerText = balance.toLocaleString() + ' ₽';
+            const invDiv = document.getElementById('myInv'); invDiv.innerHTML = '';
+            if(data.inventory) {
+                Object.keys(data.inventory).forEach(key => {
+                    const item = data.inventory[key];
+                    const card = document.createElement('div'); card.className = 'mini-card';
+                    card.innerHTML = `<img src="${item.img}"><br><b>${item.price} ₽</b>`;
+                    card.onclick = () => {
+                        selectedMy = { key, ...item };
+                        document.querySelectorAll('#myInv .mini-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        updateUI();
+                    };
+                    invDiv.appendChild(card);
+                });
+            }
+        });
+
+        function updateUI() {
+            if(selectedMy) {
+                document.getElementById('mySlot').innerHTML = `<img src="${selectedMy.img}"><div style="font-size:12px; margin-top:10px;">${selectedMy.name}</div><div style="color:var(--accent);">${selectedMy.price} ₽</div>`;
+                document.getElementById('mySlot').classList.add('active');
+            }
+            if(selectedTarget) {
+                document.getElementById('targetSlot').innerHTML = `<img src="${selectedTarget.img}"><div style="font-size:12px; margin-top:10px;">${selectedTarget.name}</div><div style="color:var(--accent);">${selectedTarget.price} ₽</div>`;
+                document.getElementById('targetSlot').classList.add('active');
+            }
+            if(selectedMy && selectedTarget) {
+                let chance = (selectedMy.price / selectedTarget.price) * 100;
+                if(chance > 95) chance = 95;
+                document.getElementById('chanceDisplay').innerText = chance.toFixed(2) + "%";
+                draw(chance);
+            }
+        }
+
+        async function startUpgrade() {
+            if(!selectedMy || !selectedTarget || spinning) return alert("Выберите скины!");
+            
+            spinning = true;
+            document.getElementById('upBtn').disabled = true;
+            const chance = (selectedMy.price / selectedTarget.price) * 100;
+            
+            // Удаляем старый предмет
+            await db.ref('users/' + user + '/inventory/' + selectedMy.key).remove();
+
+            const needle = document.getElementById('needle');
+            const spins = (Math.random() * 360) + (360 * 8); // 8 кругов + рандом
+            needle.style.transition = 'transform 4s cubic-bezier(0.15, 0, 0.15, 1)';
+            needle.style.transform = `translateX(-50%) rotate(${spins}deg)`;
+
+            setTimeout(async () => {
+                const finalAngle = spins % 360;
+                const winLimit = (chance / 100) * 360;
+                const win = finalAngle <= winLimit;
+
+                const ov = document.getElementById('overlay');
+                const st = document.getElementById('statusTitle');
+                const ss = document.getElementById('statusSkin');
+
+                if (win) {
+                    st.innerText = "УСПЕХ"; st.style.color = "#00ff88";
+                    ss.innerHTML = `<img src="${selectedTarget.img}" width="150"><br>${selectedTarget.name}`;
+                    await db.ref('users/' + user + '/inventory').push(selectedTarget);
+                } else {
+                    st.innerText = "ПРОВАЛ"; st.style.color = "#ff3b30";
+                    ss.innerHTML = "Предмет сгорел";
+                }
+
+                ov.style.display = 'flex';
+                setTimeout(() => {
+                    ov.style.display = 'none';
+                    needle.style.transition = 'none';
+                    needle.style.transform = `translateX(-50%) rotate(0deg)`;
+                    spinning = false;
+                    selectedMy = null;
+                    document.getElementById('mySlot').innerHTML = "Выберите скин";
+                    document.getElementById('mySlot').classList.remove('active');
+                    document.getElementById('upBtn').disabled = false;
+                    draw(0); document.getElementById('chanceDisplay').innerText = "0.00%";
+                }, 3000);
+
+            }, 4000);
+        }
+
+        init();
+    </script>
+</body>
+</html>

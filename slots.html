@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Slots Gold Elite - Shake Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --gold: #ffcc00; 
+            --gold-glow: #ff9900;
+            --white-gold: #fff5d7;
+            --bg-card: rgba(15, 15, 15, 0.98);
+            --ult-color: #a634ff;
+            --apple-blue: #007aff;
+        }
+        body { 
+            margin: 0; background: #000; color: #fff; 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+            background-image: url('slot_bg.jpg'); background-size: cover; background-position: center;
+        }
+
+        /* АНИМАЦИИ ТРЯСКИ */
+        @keyframes shake-mild { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, 1px); } }
+        @keyframes shake-insane {
+            0% { transform: translate(5px, 5px); }
+            50% { transform: translate(-10px, 2px); }
+            100% { transform: translate(5px, -5px); }
+        }
+        
+        /* ТРЯСКА ТЕТКИ */
+        @keyframes girlShake {
+            0% { transform: translateX(-50%) translate(2px, 2px); }
+            20% { transform: translateX(-50%) translate(-3px, -1px); }
+            40% { transform: translateX(-50%) translate(3px, 1px); }
+            60% { transform: translateX(-50%) translate(-2px, 2px); }
+            80% { transform: translateX(-50%) translate(3px, -2px); }
+            100% { transform: translateX(-50%) translate(-1px, -1px); }
+        }
+
+        @keyframes girlIn {
+            from { opacity: 0; transform: translate(-50%, 50px) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+        }
+
+        @keyframes flash-back { 0% { background: rgba(255, 255, 255, 0); } 50% { background: rgba(255, 255, 255, 0.2); } 100% { background: rgba(255, 255, 255, 0); } }
+
+        header { padding: 45px 20px 10px; z-index: 10; position: relative; }
+        .stats-row { display: flex; justify-content: space-between; align-items: flex-end; }
+        #balance { font-weight: 800; color: var(--gold); font-size: 26px; text-shadow: 0 0 15px var(--gold-glow); }
+        .ult-wrapper { width: 100%; height: 6px; background: rgba(255,255,255,0.1); }
+        #ult-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #6200ff, #a634ff); transition: width 0.3s; }
+
+        .slot-machine { flex: 1; display: flex; justify-content: center; align-items: center; z-index: 5; padding: 0 10px; }
+        .reels-container {
+            display: flex; gap: 5px; background: rgba(0,0,0,0.9);
+            padding: 10px; border-radius: 20px; border: 4px solid var(--gold);
+            width: 100%; max-width: 500px; justify-content: center;
+        }
+        .reels-container.spinning { animation: shake-mild 0.1s infinite; }
+        .reels-container.big-win-active { animation: shake-insane 0.05s infinite; border-color: #fff; box-shadow: 0 0 60px var(--gold); }
+
+        .reel { flex: 1; height: 180px; background: #000; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #222; }
+        .symbol-strip { position: absolute; width: 100%; display: flex; flex-direction: column; }
+        .symbol-strip.blur { filter: blur(4px); }
+        .symbol { height: 60px; display: flex; justify-content: center; align-items: center; padding: 5px; box-sizing: border-box; }
+        .symbol img { width: 100%; height: 100%; object-fit: contain; }
+
+        .controls {
+            padding: 15px 20px 35px; background: var(--bg-card);
+            border-radius: 25px 25px 0 0; display: flex; flex-direction: column; gap: 12px;
+            box-shadow: 0 -10px 40px rgba(0,0,0,1); z-index: 10; backdrop-filter: blur(20px);
+        }
+        .row { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+        .label { font-size: 11px; color: #555; text-transform: uppercase; font-weight: 800; width: 65px; }
+        .bet-input-wrapper { display: flex; align-items: center; background: rgba(255,255,255,0.05); border-radius: 12px; flex: 1; }
+        .bet-field { background: none; border: none; color: #fff; width: 100%; text-align: center; font-size: 18px; font-weight: 800; outline: none; padding: 12px 0; }
+        .stepper-btn { background: none; border: none; color: #fff; width: 45px; height: 45px; font-size: 22px; cursor: pointer; }
+
+        .choice-group { display: flex; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 3px; gap: 3px; flex: 1; }
+        .choice-btn { flex: 1; background: none; border: none; color: #666; padding: 10px; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .choice-btn.active { background: var(--apple-blue); color: #fff; }
+
+        .btn-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+        .action-btn { border: none; border-radius: 15px; padding: 20px; font-weight: 900; font-size: 16px; cursor: pointer; text-transform: uppercase; }
+        .spin-btn { background: linear-gradient(180deg, #ff3b30, #cc0000); color: #fff; box-shadow: 0 4px 15px rgba(255, 59, 48, 0.3); }
+        .ult-btn { background: #222; color: #444; }
+        .ult-btn.ready { background: var(--ult-color); color: #fff; box-shadow: 0 0 20px var(--ult-color); }
+
+        /* WIN OVERLAY */
+        .win-overlay { 
+            position: fixed; inset: 0; z-index: 1000; 
+            display: none; justify-content: center; align-items: center; 
+            background: rgba(0,0,0,0.85); pointer-events: none;
+        }
+        .flash-layer { position: absolute; inset:0; z-index: 1001; }
+        .money-layer { position: absolute; inset:0; z-index: 1002; }
+        
+        .girl-img { 
+            position: absolute; 
+            bottom: 0; 
+            left: 50%; 
+            transform: translateX(-50%);
+            width: auto; 
+            height: 95%; 
+            max-width: 100%;
+            z-index: 1005; 
+            display: none;
+            object-fit: contain;
+        }
+        /* Класс для тряски тетки */
+        .girl-img.shaking {
+            animation: girlIn 0.4s ease-out forwards, girlShake 0.1s infinite 0.4s;
+        }
+
+        .text-layer {
+            position: absolute; inset: 0; z-index: 1010; 
+            display: flex; flex-direction: column; justify-content: space-between;
+            align-items: center; padding: 100px 0; box-sizing: border-box;
+        }
+        .win-title { 
+            font-family: 'Anton', sans-serif; font-size: 65px; text-align: center;
+            text-transform: uppercase; line-height: 1; letter-spacing: 3px;
+            color: #fff; text-shadow: 0 0 10px #fff, 0 0 40px var(--gold);
+        }
+        .win-amount { 
+            font-family: 'Anton', sans-serif; font-size: 110px; 
+            color: var(--white-gold); 
+            text-shadow: 0 0 20px #fff, 0 0 40px var(--gold-glow), 0 0 80px var(--gold-glow);
+            letter-spacing: -3px;
+        }
+
+        .money-particle { position: absolute; font-size: 40px; animation: fall linear forwards; z-index: 1006; }
+        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="win-overlay" id="winOverlay">
+        <div class="flash-layer" id="flashLayer"></div>
+        <div class="money-layer" id="moneyLayer"></div>
+        <img src="" id="winGirl" class="girl-img">
+        <div class="text-layer">
+            <div class="win-title" id="winLabel">BIG WIN</div>
+            <div class="win-amount" id="winTxt">0 ₽</div>
+        </div>
+    </div>
+
+    <div class="ult-wrapper"><div id="ult-bar"></div></div>
+
+    <header>
+        <div class="stats-row">
+            <div id="balance">0 ₽</div>
+            <div id="status-tag" style="font-size: 10px; color: var(--ult-color); font-weight: 900;">СТАНДАРТ</div>
+        </div>
+        <div id="deposit-display" style="font-size: 12px; color: #8e8e93; font-weight: 600;">ДЕПОЗИТ: 0 ₽</div>
+    </header>
+
+    <div class="slot-machine">
+        <div class="reels-container" id="mainContainer"></div>
+    </div>
+
+    <div class="controls">
+        <div class="row">
+            <span class="label">Ставка</span>
+            <div class="bet-input-wrapper">
+                <button class="stepper-btn" onclick="adjustBet(-100)">-</button>
+                <input type="number" id="betInput" class="bet-field" value="100">
+                <button class="stepper-btn" onclick="adjustBet(100)">+</button>
+            </div>
+        </div>
+        <div class="row">
+            <span class="label">Слотов</span>
+            <div class="choice-group" id="reelGroup">
+                <button class="choice-btn active" onclick="setReels(3, this)">3</button>
+                <button class="choice-btn" onclick="setReels(4, this)">4</button>
+                <button class="choice-btn" onclick="setReels(5, this)">5</button>
+            </div>
+        </div>
+        <div class="row">
+            <span class="label">Авто</span>
+            <div class="choice-group" id="autoGroup">
+                <button class="choice-btn" onclick="setAuto(1500, this)">1.5с</button>
+                <button class="choice-btn active" onclick="setAuto(0, this)">ВЫКЛ</button>
+            </div>
+        </div>
+        <div class="btn-grid">
+            <button class="action-btn ult-btn" id="ultBtn" onclick="activateUltra()">ULTRA</button>
+            <button class="action-btn spin-btn" id="spinBtn" onclick="handleAction()">КРУТИТЬ</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const user = localStorage.getItem('walletUser');
+
+        let balance = 0, ult = 0, numReels = 3, isAuto = false, autoDelay = 0, isUltra = false, isSpinning = false;
+        const symbols = ['sym1.png', 'sym2.png', 'sym3.png', 'sym4.png', 'sym5.png', 'sym6.png', 'sym7.png'];
+        const girls = ['girl1.png', 'girl2.png', 'girl3.png'];
+
+        function buildReels() {
+            const res = document.getElementById('mainContainer'); res.innerHTML = '';
+            for (let i = 1; i <= numReels; i++) {
+                const r = document.createElement('div'); r.className = 'reel';
+                r.innerHTML = `<div class="symbol-strip" id="s${i}"></div>`;
+                res.appendChild(r);
+                const st = document.getElementById('s'+i);
+                for(let j=0; j<60; j++) st.innerHTML += `<div class="symbol"><img src="${symbols[Math.floor(Math.random()*7)]}"></div>`;
+            }
+        }
+        buildReels();
+
+        db.ref('users/' + user).on('value', s => {
+            const data = s.val(); balance = data?.balance || 0;
+            document.getElementById('balance').innerText = balance.toLocaleString() + ' ₽';
+            document.getElementById('deposit-display').innerText = `ДЕПОЗИТ: ${(data?.deposit || 0).toLocaleString()} ₽`;
+        });
+
+        function adjustBet(v) { 
+            const i = document.getElementById('betInput'); 
+            i.value = Math.max(1, (parseInt(i.value) || 0) + v); 
+        }
+
+        function setReels(n, btn) {
+            if (isSpinning) return;
+            numReels = n;
+            document.querySelectorAll('#reelGroup .choice-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active'); buildReels();
+        }
+
+        function setAuto(ms, btn) {
+            document.querySelectorAll('#autoGroup .choice-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            autoDelay = ms;
+            if (ms > 0) {
+                if (!isAuto) { isAuto = true; document.getElementById('spinBtn').innerText = "СТОП"; runAutoLoop(); }
+            } else { isAuto = false; document.getElementById('spinBtn').innerText = "КРУТИТЬ"; }
+        }
+
+        async function runAutoLoop() {
+            while (isAuto) {
+                if (!isSpinning) {
+                    const success = await spin();
+                    if (!success) { setAuto(0, document.querySelectorAll('#autoGroup .choice-btn')[1]); break; }
+                }
+                await new Promise(r => setTimeout(r, autoDelay));
+            }
+        }
+
+        function handleAction() {
+            if (isAuto) setAuto(0, document.querySelectorAll('#autoGroup .choice-btn')[1]);
+            else spin();
+        }
+
+        function spin() {
+            return new Promise(async (resolve) => {
+                const bet = parseInt(document.getElementById('betInput').value) || 0;
+                if (balance < bet) { isAuto = false; return alert("Баланс пуст!"); }
+                
+                isSpinning = true;
+                const container = document.getElementById('mainContainer');
+                container.classList.add('spinning');
+                document.getElementById('spinBtn').disabled = true;
+
+                await db.ref('users/' + user).update({ balance: balance - bet });
+
+                const winHit = isUltra ? (Math.random() < 0.8) : (Math.random() < 0.15);
+                const luckySym = symbols[Math.floor(Math.random()*7)];
+                const results = [];
+
+                for (let i = 1; i <= numReels; i++) {
+                    const s = document.getElementById('s'+i);
+                    s.classList.add('blur');
+                    const target = 50;
+                    const sym = winHit ? luckySym : symbols[Math.floor(Math.random()*7)];
+                    s.children[target+1].innerHTML = `<img src="${sym}">`;
+                    results.push(sym);
+                    s.style.transition = `transform ${1 + i*0.2}s cubic-bezier(0.4, 0, 0.2, 1)`;
+                    s.style.transform = `translateY(${-target * 60}px)`;
+                }
+
+                setTimeout(async () => {
+                    container.classList.remove('spinning');
+                    document.querySelectorAll('.symbol-strip').forEach(s => s.classList.remove('blur'));
+                    const counts = {};
+                    results.forEach(x => counts[x] = (counts[x] || 0) + 1);
+                    const maxCount = Math.max(...Object.values(counts));
+
+                    let prize = 0;
+                    if (maxCount === numReels) {
+                        prize = bet * (numReels + 2);
+                        await triggerWinAnimation("jackpot", prize);
+                    } else if (maxCount >= 3) {
+                        prize = bet * 3;
+                        await triggerWinAnimation("mega", prize);
+                    } else if (maxCount === 2) {
+                        prize = bet * 2;
+                        await triggerWinAnimation("big", prize);
+                    }
+
+                    if (prize > 0) {
+                        await db.ref('users/' + user).update({ balance: balance + prize });
+                    } else if (!isUltra) {
+                        ult = Math.min(100, ult + 10);
+                        document.getElementById('ult-bar').style.width = ult + '%';
+                        if (ult >= 100) document.getElementById('ultBtn').classList.add('ready');
+                    }
+                    
+                    isSpinning = false;
+                    document.getElementById('spinBtn').disabled = false;
+                    setTimeout(() => { buildReels(); resolve(true); }, 500);
+                }, 1000 + numReels * 200);
+            });
+        }
+
+        async function triggerWinAnimation(type, amount) {
+            const ov = document.getElementById('winOverlay');
+            const label = document.getElementById('winLabel');
+            const txt = document.getElementById('winTxt');
+            const flash = document.getElementById('flashLayer');
+            const girl = document.getElementById('winGirl');
+            const container = document.getElementById('mainContainer');
+
+            ov.style.display = 'flex';
+            girl.src = girls[Math.floor(Math.random() * girls.length)];
+            girl.style.display = 'block';
+            girl.classList.add('shaking'); // ВКЛЮЧАЕМ ТРЯСКУ
+            txt.innerText = amount + " ₽";
+
+            if (type === "jackpot") {
+                label.innerText = "JACKPOT !!!";
+                label.style.textShadow = "0 0 20px #fff, 0 0 50px var(--gold), 0 0 100px var(--gold)";
+                container.classList.add('big-win-active');
+                flash.style.animation = "flash-back 0.05s infinite";
+                spawnRichness(100);
+            } else if (type === "mega") {
+                label.innerText = "MEGA WIN";
+                label.style.textShadow = "0 0 15px #fff, 0 0 40px var(--gold)";
+                spawnRichness(60);
+            } else {
+                label.innerText = "BIG WIN";
+                label.style.textShadow = "0 0 10px #fff, 0 0 30px var(--gold)";
+                spawnRichness(30);
+            }
+
+            return new Promise(r => {
+                setTimeout(() => {
+                    ov.style.display = 'none';
+                    girl.style.display = 'none';
+                    girl.classList.remove('shaking'); // ВЫКЛЮЧАЕМ ТРЯСКУ
+                    container.classList.remove('big-win-active');
+                    flash.style.animation = "";
+                    r();
+                }, 4000);
+            });
+        }
+
+        function spawnRichness(count) {
+            const layer = document.getElementById('moneyLayer');
+            layer.innerHTML = '';
+            const items = ['💵','💰','💎','✨'];
+            for(let i=0; i<count; i++) {
+                const el = document.createElement('div');
+                el.className = 'money-particle';
+                el.innerText = items[Math.floor(Math.random()*items.length)];
+                el.style.left = Math.random() * 100 + 'vw';
+                el.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                el.style.fontSize = (Math.random() * 20 + 20) + 'px';
+                layer.appendChild(el);
+            }
+        }
+
+        function activateUltra() {
+            if (ult < 100 || isUltra) return;
+            isUltra = true; ult = 0;
+            document.getElementById('ult-bar').style.width = '0%';
+            document.getElementById('ultBtn').classList.remove('ready');
+            document.getElementById('status-tag').innerText = "!!! ULTRA MODE !!!";
+            let spins = 0;
+            const uInterval = setInterval(async () => {
+                if (!isSpinning) { await spin(); spins++; }
+                if (spins >= 10) { clearInterval(uInterval); isUltra = false; document.getElementById('status-tag').innerText = "СТАНДАРТ"; }
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
