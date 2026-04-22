@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Инвентарь — CaseBattle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0b0c0e; --card-bg: #121417; --accent: #ffcc00; --border: #1f2228; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 50px; }
+        header { padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.4); }
+        .logo { font-size: 20px; font-weight: 900; text-decoration: none; color: #fff; }
+        .logo span { color: var(--accent); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; padding: 40px; max-width: 1200px; margin: 0 auto; }
+        .item-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 15px; text-align: center; transition: 0.3s; }
+        .item-card img { width: 100px; height: 70px; object-fit: contain; margin-bottom: 10px; }
+        .sell-btn { background: var(--accent); border: none; padding: 10px; width: 100%; border-radius: 8px; font-weight: 800; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .sell-btn:hover { background: #e6b800; }
+        #balance { color: var(--accent); font-weight: 900; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="casebattlemain.html" class="logo">CASE<span>BATTLE</span></a>
+        <div id="balance">0 ₽</div>
+    </header>
+    <h1 style="text-align: center; margin-top: 30px;">ВАШ ИНВЕНТАРЬ</h1>
+    <div class="grid" id="inventoryGrid"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const user = localStorage.getItem('walletUser');
+
+        db.ref('users/' + user).on('value', s => {
+            const data = s.val() || {};
+            document.getElementById('balance').innerText = (data.balance || 0).toLocaleString() + ' ₽';
+            const grid = document.getElementById('inventoryGrid');
+            grid.innerHTML = '';
+            
+            if(data.inventory) {
+                Object.keys(data.inventory).forEach(key => {
+                    const item = data.inventory[key];
+                    grid.innerHTML += `
+                        <div class="item-card" style="border-bottom: 3px solid ${item.rarity}">
+                            <img src="${item.img}">
+                            <div style="font-size: 12px; height: 30px; display: flex; align-items: center; justify-content: center;">${item.name}</div>
+                            <div style="color: #ffcc00; font-weight: 800; margin: 5px 0;">${item.price} ₽</div>
+                            <button class="sell-btn" onclick="sellItem('${key}', ${item.price})">Продать</button>
+                        </div>`;
+                });
+            } else {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: #666;">Инвентарь пуст...</p>';
+            }
+        });
+
+        async function sellItem(key, price) {
+            const s = await db.ref('users/' + user + '/balance').once('value');
+            const currentBal = s.val() || 0;
+            await db.ref('users/' + user + '/inventory/' + key).remove();
+            await db.ref('users/' + user + '/balance').set(currentBal + price);
+        }
+    </script>
+</body>
+</html>
