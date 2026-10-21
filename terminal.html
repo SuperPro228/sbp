@@ -21,32 +21,30 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
         html, body { height: 100%; overflow: hidden; background: var(--tv-bg); color: var(--tv-text); }
         
+        /* Базовая структура (Мобилки) */
         .app { 
             width: 100%; height: 100%; margin: 0 auto;
             display: flex; flex-direction: column; position: relative; overflow: hidden;
         }
 
-        /* --- АДАПТИВНОСТЬ ПОД ПК --- */
-        @media (min-width: 768px) {
+        /* Структура для ПК */
+        @media (min-width: 900px) {
             .app {
                 flex-direction: row;
-                max-width: 1200px;
-                border-left: 1px solid var(--tv-border);
-                border-right: 1px solid var(--tv-border);
+                max-width: 100%; /* Растягиваем на весь экран */
             }
             .left-panel {
-                flex: 2;
+                flex: 1; /* График занимает всё свободное место */
                 display: flex;
                 flex-direction: column;
                 border-right: 1px solid var(--tv-border);
             }
             .right-panel {
-                flex: 1;
+                width: 380px; /* Фиксированная ширина панели справа */
                 display: flex;
                 flex-direction: column;
                 background: var(--tv-bg);
-                min-width: 350px;
-                max-width: 400px;
+                flex-shrink: 0;
             }
         }
 
@@ -67,8 +65,8 @@
         .wallet-btn:hover { background: #2a2e39; }
 
         /* --- ГРАФИК --- */
-        .chart-container { flex: 1 1 auto; position: relative; background: var(--tv-bg); }
-        #tradingview_widget { width: 100%; height: 100%; }
+        .chart-container { flex: 1 1 auto; position: relative; background: var(--tv-bg); min-height: 300px; }
+        #tradingview_widget { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
 
         /* --- ПАНЕЛЬ УПРАВЛЕНИЯ --- */
         .panel { 
@@ -76,8 +74,8 @@
             background: var(--tv-bg); flex-shrink: 0; border-top: 1px solid var(--tv-border);
             z-index: 5;
         }
-        @media (min-width: 768px) {
-            .panel { border-top: none; padding: 24px; }
+        @media (min-width: 900px) {
+            .panel { border-top: none; padding: 24px; flex: 1; justify-content: flex-start; }
         }
 
         .toggle-wrapper { position: relative; display: flex; background: var(--tv-panel); border-radius: 4px; padding: 3px; border: 1px solid var(--tv-border); }
@@ -117,7 +115,7 @@
             padding: 20px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             max-height: 70%; display: flex; flex-direction: column;
         }
-        @media (min-width: 768px) {
+        @media (min-width: 900px) {
             .wallet-content { max-width: 500px; margin: 0 auto; border-radius: 20px; margin-bottom: 50px; max-height: 80%; }
         }
         .wallet-modal.show .wallet-content { transform: translateY(0); }
@@ -171,7 +169,7 @@
                 <div class="balance-box"><span id="rub-balance">0</span> ₽</div>
                 <button class="wallet-btn" onclick="openWallet()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
-                    Мои монеты
+                    Кошелек
                 </button>
             </div>
         </div>
@@ -218,15 +216,14 @@
 
     let currentBalance = 0;
     let currentMode = 'buy';
-    let currentCoin = "SOL"; // По умолчанию Solana
-    let coinPriceInUsd = 145.50; // Примерная цена для расчета в USDT
+    let currentCoin = "SOL"; 
+    let coinPriceInUsd = 145.50; 
 
     db.ref('users/' + user + '/balance').on('value', snap => {
         currentBalance = snap.val() || 0;
         document.getElementById('rub-balance').innerText = currentBalance.toLocaleString();
     });
 
-    // Слушаем портфель (купленные монеты)
     db.ref('users/' + user + '/portfolio').on('value', snap => {
         const portfolio = snap.val() || {};
         renderWallet(portfolio);
@@ -345,7 +342,6 @@
         setTimeout(() => { btn.disabled = false; }, 500);
     }
 
-    // --- РЕНДЕР КОШЕЛЬКА ---
     function renderWallet(portfolio) {
         const list = document.getElementById('coinsList');
         list.innerHTML = '';
