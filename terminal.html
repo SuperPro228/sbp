@@ -1,458 +1,231 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TradingView Terminal</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Axiom Trading Terminal</title>
+<style>
+  :root { --bg: #0a0a0a; --panel: #1c1c1e; --text: #ffffff; --muted: #8e8e93; --green: #30d158; --red: #ff453a; --blue: #0a84ff; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
+  .app { width: 100%; max-width: 500px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+  
+  /* Шапка */
+  .term-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .back-btn { background: none; border: 1px solid #333; color: var(--blue); padding: 8px 15px; border-radius: 8px; font-size: 14px; cursor: pointer; text-decoration: none; }
+  
+  /* Выбор аккаунта */
+  .account-selector { background: var(--panel); padding: 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .account-selector label { font-size: 12px; color: var(--muted); }
+  .account-selector select { background: #2c2c2e; color: white; border: 1px solid #444; padding: 10px; border-radius: 8px; font-size: 16px; outline: none; }
 
-        :root {
-            --bg-main: #131722;
-            --bg-panel: #1e222d;
-            --bg-hover: #2a2e39;
-            --border: #2a2e39;
-            --text-main: #d1d4dc;
-            --text-muted: #787b86;
-            --blue: #2962ff;
-            --green: #089981;
-            --red: #f23645;
-            --yellow: #fcd535;
-        }
+  /* График */
+  .chart-box { height: 250px; background: var(--panel); border-radius: 12px; position: relative; overflow: hidden; }
+  canvas { width: 100%; height: 100%; display: block; }
+  
+  /* Статистика */
+  .term-stats { display: flex; justify-content: space-between; background: var(--panel); padding: 15px; border-radius: 12px; }
+  .term-stat { display: flex; flex-direction: column; gap: 5px; }
+  .term-stat-lbl { font-size: 12px; color: var(--muted); }
+  .term-stat-val { font-size: 18px; font-weight: bold; }
+  
+  /* Кнопки */
+  .trade-panel { display: flex; gap: 10px; }
+  .trade-btn { flex: 1; padding: 15px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; }
+  .btn-buy { background: var(--green); }
+  .btn-sell { background: var(--red); }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
-        html, body { height: 100%; overflow: hidden; background: var(--bg-main); color: var(--text-main); }
-        
-        .app { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; }
-
-        @media (min-width: 900px) {
-            .app { flex-direction: row; }
-            .left-panel { flex: 1; display: flex; flex-direction: column; border-right: 1px solid var(--border); position: relative; }
-            .right-panel { width: 360px; display: flex; flex-direction: column; background: var(--bg-panel); flex-shrink: 0; }
-        }
-
-        /* --- ВЕРХНЯЯ ПАНЕЛЬ --- */
-        .top-toolbar { display: flex; align-items: center; padding: 0 10px; height: 40px; background: var(--bg-main); border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-muted); gap: 15px; overflow-x: auto; white-space: nowrap; }
-        .top-toolbar .ticker { color: var(--blue); font-weight: 700; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-
-        /* --- ГРАФИК --- */
-        .chart-container { flex: 1 1 auto; position: relative; background: var(--bg-main); min-height: 300px; }
-        .tradingview-widget-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .tradingview-widget-container__widget { width: 100%; height: 100%; }
-
-        /* --- ПРАВАЯ ПАНЕЛЬ --- */
-        .panel-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-main); }
-        .p-tab { flex: 1; text-align: center; padding: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; }
-        .p-tab.active { color: var(--text-main); border-bottom-color: var(--blue); }
-
-        .tab-content { display: none; flex-direction: column; flex: 1; overflow-y: auto; }
-        .tab-content.active { display: flex; }
-
-        .panel { padding: 15px; display: flex; flex-direction: column; gap: 15px; }
-
-        .toggle-wrapper { position: relative; display: flex; background: var(--bg-main); border-radius: 4px; padding: 3px; border: 1px solid var(--border); }
-        .toggle-slider { position: absolute; top: 3px; left: 3px; width: calc(50% - 3px); height: calc(100% - 6px); background: var(--bg-panel); border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
-        .toggle-slider.sell { transform: translateX(100%); }
-
-        .t-btn { flex: 1; padding: 10px; text-align: center; font-weight: 600; font-size: 14px; cursor: pointer; color: var(--text-muted); position: relative; z-index: 2; }
-        .t-btn.active-buy { color: var(--green); }
-        .t-btn.active-sell { color: var(--red); }
-
-        .input-box { display: flex; align-items: center; background: var(--bg-main); border: 1px solid var(--border); border-radius: 4px; padding: 10px 14px; }
-        .input-box input { background: none; border: none; color: var(--text-main); font-size: 22px; font-weight: 600; width: 100%; outline: none; }
-
-        .pcts { display: flex; gap: 6px; }
-        .pct-btn { flex: 1; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 8px 0; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
-
-        /* Плечо */
-        .leverage-box { display: flex; flex-direction: column; gap: 5px; }
-        .leverage-header { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); }
-        .leverage-slider { width: 100%; -webkit-appearance: none; height: 4px; background: var(--bg-hover); border-radius: 2px; outline: none; margin-top: 10px; }
-        .leverage-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--blue); cursor: pointer; }
-
-        .exec-btn { width: 100%; padding: 16px; border: none; border-radius: 4px; font-size: 16px; font-weight: 700; cursor: pointer; color: #fff; }
-        .exec-btn.buy { background: var(--green); }
-        .exec-btn.sell { background: var(--red); }
-
-        /* Список позиций */
-        .position-item { background: var(--bg-main); padding: 12px; border-radius: 4px; border: 1px solid var(--border); margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .pos-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
-        .pos-long { color: var(--green); }
-        .pos-short { color: var(--red); }
-        .pos-details { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); }
-        .pos-pnl { font-weight: 700; font-size: 14px; text-align: right; }
-        .close-pos-btn { background: var(--bg-hover); border: 1px solid var(--border); color: #fff; padding: 6px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600; margin-top: 5px; }
-        .close-pos-btn:hover { background: var(--red); border-color: var(--red); }
-
-        /* --- МОДАЛЬНЫЕ ОКНА --- */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-        .modal.show { display: flex; opacity: 1; }
-        .modal-content { width: 90%; max-width: 400px; background: var(--bg-panel); border-radius: 8px; padding: 24px; transform: translateY(20px); transition: transform 0.3s; border: 1px solid var(--border); }
-        .modal.show .modal-content { transform: translateY(0); }
-        
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-title { font-size: 18px; font-weight: 600; }
-        .close-btn { background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; }
-
-        .search-input { width: 100%; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 14px; border-radius: 4px; font-size: 16px; outline: none; margin-bottom: 15px; }
-
-        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--bg-panel); color: var(--text-main); padding: 12px 24px; border-radius: 4px; font-size: 14px; border-left: 3px solid var(--blue); opacity: 0; pointer-events: none; z-index: 200; display: none; }
-        .toast-show { display: block !important; animation: toastIn 0.3s forwards; }
-        .toast-hide { animation: toastOut 0.3s forwards; }
-        @keyframes toastIn { 0% { transform: translate(-50%, -20px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
-        @keyframes toastOut { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
-    </style>
+  /* Уведомления */
+  #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 12px 24px; border-radius: 20px; font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none; text-align: center; }
+</style>
 </head>
 <body>
+<div id="toast"></div>
+
 <div class="app">
-    <div id="toast"></div>
+  <div class="term-header">
+    <a href="prop.html" class="back-btn">← Назад</a>
+    <div style="font-weight:bold;">Axiom Terminal</div>
+  </div>
 
-    <!-- Модалка поиска -->
-    <div class="modal" id="searchModal" onclick="closeModal('searchModal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <div class="modal-title">Поиск тикера</div>
-                <button class="close-btn" onclick="closeModal('searchModal')">×</button>
-            </div>
-            <input type="text" class="search-input" id="coinSearchInput" placeholder="Например: BTCUSDT, ETHUSDT" autocomplete="off">
-            <button class="exec-btn buy" onclick="changeCoin()" style="background: var(--blue);">Загрузить график</button>
-        </div>
+  <div class="account-selector">
+    <label>Выберите счет для торговли:</label>
+    <select id="account-dropdown" onchange="switchAccount()">
+      <!-- Заполняется через JS -->
+    </select>
+  </div>
+
+  <div class="chart-box">
+    <canvas id="cv"></canvas>
+  </div>
+
+  <div class="term-stats">
+    <div class="term-stat">
+      <span class="term-stat-lbl">Баланс</span>
+      <span class="term-stat-val" id="acc-balance">$0</span>
     </div>
-
-    <!-- ЛЕВАЯ ПАНЕЛЬ -->
-    <div class="left-panel">
-        <div class="top-toolbar">
-            <div class="ticker" onclick="openModal('searchModal')" id="current-ticker">SOL/USDT ⚡</div>
-        </div>
-
-        <div class="chart-container">
-            <div class="tradingview-widget-container">
-                <div class="tradingview-widget-container__widget" id="tv_chart"></div>
-            </div>
-        </div>
+    <div class="term-stat">
+      <span class="term-stat-lbl">PnL</span>
+      <span class="term-stat-val" id="acc-pnl" style="color:var(--muted);">0%</span>
     </div>
+  </div>
 
-    <!-- ПРАВАЯ ПАНЕЛЬ -->
-    <div class="right-panel">
-        <div class="panel-tabs">
-            <div class="p-tab active" onclick="switchTab('trade')">Торговля</div>
-            <div class="p-tab" onclick="switchTab('positions')">Позиции (<span id="pos-count">0</span>)</div>
-        </div>
-
-        <!-- Вкладка Торговли -->
-        <div class="tab-content active" id="tab-trade">
-            <div class="panel">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
-                    <span style="font-size:13px; color:var(--text-muted);">Доступно</span>
-                    <span style="font-weight:700;" id="rub-balance">0 ₽</span>
-                </div>
-                
-                <div class="toggle-wrapper">
-                    <div class="toggle-slider" id="toggle-slider"></div>
-                    <div class="t-btn active-buy" id="t-buy" onclick="setMode('buy')">Лонг</div>
-                    <div class="t-btn" id="t-sell" onclick="setMode('sell')">Шорт</div>
-                </div>
-                
-                <div class="input-box">
-                    <input type="number" id="amt" placeholder="0.00" step="100">
-                    <span style="color:var(--text-muted); font-weight: 600;">₽</span>
-                </div>
-                <div class="pcts">
-                    <button class="pct-btn" onclick="setPct(25)">25%</button>
-                    <button class="pct-btn" onclick="setPct(50)">50%</button>
-                    <button class="pct-btn" onclick="setPct(75)">75%</button>
-                    <button class="pct-btn" onclick="setPct(100)">Макс</button>
-                </div>
-
-                <!-- Плечо -->
-                <div class="leverage-box">
-                    <div class="leverage-header">
-                        <span>Кредитное плечо</span>
-                        <span style="color:var(--blue); font-weight:bold;" id="lev-display">x1</span>
-                    </div>
-                    <input type="range" min="1" max="100" value="1" class="leverage-slider" id="lev-slider" oninput="updateLeverage(this.value)">
-                </div>
-
-                <button class="exec-btn buy" id="exec" onclick="openPosition()">Открыть Лонг</button>
-            </div>
-        </div>
-
-        <!-- Вкладка Позиций -->
-        <div class="tab-content" id="tab-positions">
-            <div class="panel" id="positions-list">
-                <div style="text-align:center; color:var(--text-muted); padding:20px;">Нет открытых позиций</div>
-            </div>
-        </div>
-    </div>
+  <div class="trade-panel">
+    <button class="trade-btn btn-buy" onclick="trade('buy')">BUY</button>
+    <button class="trade-btn btn-sell" onclick="trade('sell')">SELL</button>
+  </div>
 </div>
 
-<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
-    const firebaseConfig = { databaseURL: "https://dsadasdas-25283-default-rtdb.europe-west1.firebasedatabase.app/" };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const user = localStorage.getItem('walletUser');
-    if (!user) window.location.href = 'index.html';
+  let accounts = [];
+  let activeAccountIndex = 0;
+  let activePosition = null;
+  let currentPrice = 100.00;
+  let priceHistory = Array(40).fill(100.00);
+  
+  // Загрузка при старте
+  window.onload = () => {
+    // 1. Проверка авторизации (сессии)
+    const session = localStorage.getItem('user_session');
+    if (!session) {
+      alert("Вы не вошли в аккаунт! Перенаправление...");
+      window.location.href = 'prop.html';
+      return;
+    }
 
-    let currentBalance = 0;
-    let currentMode = 'buy';
-    let currentCoin = "SOL";
-    let currentPrice = 106.28; // Имитация текущей цены для расчетов
-    let currentLeverage = 1;
-    let tvWidget = null;
-    let openPositions = []; // Массив для хранения открытых позиций
+    // 2. Загрузка купленных счетов
+    accounts = JSON.parse(localStorage.getItem('my_prop_accounts')) || [];
+    
+    if (accounts.length === 0) {
+      alert("У вас нет купленных счетов! Сначала купите счет.");
+      window.location.href = 'prop.html';
+      return;
+    }
 
-    // --- БАЗА ДАННЫХ ---
-    db.ref('users/' + user + '/balance').on('value', snap => {
-        currentBalance = snap.val() || 0;
-        document.getElementById('rub-balance').innerText = currentBalance.toLocaleString() + ' ₽';
+    // 3. Заполнение выпадающего списка
+    const dropdown = document.getElementById('account-dropdown');
+    dropdown.innerHTML = '';
+    accounts.forEach((acc, index) => {
+      const option = document.createElement('option');
+      option.value = index;
+      option.innerText = `Счет $${acc.size.toLocaleString()} (Баланс: $${acc.currentBalance.toFixed(2)})`;
+      dropdown.appendChild(option);
     });
 
-    // Слушаем открытые позиции из Firebase
-    db.ref('users/' + user + '/positions').on('value', snap => {
-        openPositions = [];
-        const data = snap.val() || {};
-        Object.keys(data).forEach(key => {
-            openPositions.push({ id: key, ...data[key] });
-        });
-        document.getElementById('pos-count').innerText = openPositions.length;
-        renderPositions();
-        drawChartLines();
+    // 4. Запуск движка графика
+    updateUI();
+    resizeCanvas();
+    setInterval(updatePrice, 1000); // Движение цены каждую секунду
+  };
+
+  // Переключение между счетами
+  window.switchAccount = () => {
+    const dropdown = document.getElementById('account-dropdown');
+    activeAccountIndex = parseInt(dropdown.value);
+    activePosition = null; // Сбрасываем сделку при смене счета
+    currentPrice = 100.00;
+    priceHistory = Array(40).fill(100.00);
+    
+    updateUI();
+    drawChart();
+    showToast(`Переключено на счет $${accounts[activeAccountIndex].size.toLocaleString()}`);
+  };
+
+  // Обновление баланса и PnL на экране
+  function updateUI() {
+    const acc = accounts[activeAccountIndex];
+    if (!acc) return;
+
+    document.getElementById('acc-balance').innerText = `$${acc.currentBalance.toFixed(2)}`;
+    
+    const pnlPercent = ((acc.currentBalance - acc.initialBalance) / acc.initialBalance) * 100;
+    const pnlEl = document.getElementById('acc-pnl');
+    pnlEl.innerText = (pnlPercent > 0 ? '+' : '') + pnlPercent.toFixed(2) + '%';
+    pnlEl.style.color = pnlPercent > 0 ? '#30d158' : pnlPercent < 0 ? '#ff453a' : '#8e8e93';
+  }
+
+  // Логика торговли
+  window.trade = (type) => {
+    const acc = accounts[activeAccountIndex];
+
+    if (activePosition) {
+      // Закрытие позиции
+      let pnl = activePosition.type === 'buy' 
+        ? (currentPrice - activePosition.entry) * activePosition.size 
+        : (activePosition.entry - currentPrice) * activePosition.size;
+      
+      acc.currentBalance += pnl;
+      acc.currentBalance -= Math.abs(pnl) * 0.05; // Комиссия 5%
+      
+      // Сохраняем новый баланс в память
+      localStorage.setItem('my_prop_accounts', JSON.stringify(accounts));
+      
+      showToast(`Сделка закрыта. PnL: $${pnl.toFixed(2)}`);
+      activePosition = null;
+    } else {
+      // Открытие позиции (риск 1% от счета)
+      const riskAmount = acc.initialBalance * 0.01; 
+      activePosition = { type, entry: currentPrice, size: riskAmount };
+      showToast(`Открыта позиция ${type.toUpperCase()}`);
+    }
+    
+    updateUI();
+    drawChart();
+  };
+
+  // --- Движок графика ---
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+
+  function resizeCanvas() {
+    if(!cv.parentElement) return;
+    cv.width = cv.parentElement.clientWidth;
+    cv.height = cv.parentElement.clientHeight;
+    drawChart();
+  }
+  window.addEventListener('resize', resizeCanvas);
+
+  function updatePrice() {
+    const change = (Math.random() - 0.5) * 2;
+    currentPrice = Math.max(1, currentPrice + change);
+    priceHistory.push(currentPrice);
+    if (priceHistory.length > 40) priceHistory.shift();
+
+    if (activePosition) updateUI(); // Обновляем PnL в реальном времени
+    drawChart();
+  }
+
+  function drawChart() {
+    if(!ctx) return;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    const mx = Math.max(...priceHistory), mn = Math.min(...priceHistory);
+    const rng = mx - mn || 1;
+    
+    ctx.beginPath();
+    ctx.strokeStyle = activePosition ? (activePosition.type === 'buy' ? '#30d158' : '#ff453a') : '#0a84ff';
+    ctx.lineWidth = 2;
+
+    priceHistory.forEach((p, i) => {
+      const x = (i / (priceHistory.length - 1)) * cv.width;
+      const y = cv.height - ((p - mn) / rng) * cv.height;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
+    ctx.stroke();
 
-    // --- ГРАФИК ---
-    function initAdvancedChart(symbol) {
-        document.getElementById('tv_chart').innerHTML = '';
-        tvWidget = new TradingView.widget({
-            "width": "100%",
-            "height": "100%",
-            "symbol": symbol || "BINANCE:SOLUSDT",
-            "interval": "15",
-            "timezone": "Etc/UTC",
-            "theme": "dark",
-            "style": "1",
-            "locale": "ru",
-            "toolbar_bg": "#f1f3f6",
-            "enable_publishing": false,
-            "allow_symbol_change": true, 
-            "container_id": "tv_chart",
-            "hide_side_toolbar": false
-        });
-    }
-    initAdvancedChart("BINANCE:SOLUSDT");
+    // Заливка под графиком
+    ctx.lineTo(cv.width, cv.height); ctx.lineTo(0, cv.height); ctx.closePath();
+    const g = ctx.createLinearGradient(0, 0, 0, cv.height);
+    g.addColorStop(0, activePosition ? 'rgba(48,209,88,0.2)' : 'rgba(10,132,255,0.2)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.fill();
+  }
 
-    // Отрисовка линий на графике (вход и ликвидация)
-    function drawChartLines() {
-        if(!tvWidget || !tvWidget.chart) return;
-        tvWidget.chart().removeAllShapes();
-
-        openPositions.forEach(pos => {
-            if (pos.coin === currentCoin) {
-                // Линия входа
-                tvWidget.chart().createShape(
-                    { time: Math.floor(Date.now() / 1000) - 3600, price: pos.entryPrice },
-                    { shape: 'horizontal_line', text: `${pos.type === 'long' ? 'Long' : 'Short'} x${pos.leverage}: ${pos.entryPrice.toFixed(2)}`, 
-                      overrides: { linecolor: pos.type === 'long' ? '#089981' : '#f23645', linewidth: 2, linestyle: 2 } }
-                );
-                
-                // Линия ликвидации
-                tvWidget.chart().createShape(
-                    { time: Math.floor(Date.now() / 1000) - 3600, price: pos.liqPrice },
-                    { shape: 'horizontal_line', text: `Liquidation: ${pos.liqPrice.toFixed(2)}`, 
-                      overrides: { linecolor: '#fcd535', linewidth: 1, linestyle: 3 } }
-                );
-            }
-        });
-    }
-
-    function changeCoin() {
-        let inputVal = document.getElementById('coinSearchInput').value.trim().toUpperCase();
-        if (!inputVal) return;
-        if (!inputVal.includes('USDT')) inputVal += 'USDT';
-
-        let newSymbol = "BINANCE:" + inputVal;
-        currentCoin = inputVal.replace('USDT', '');
-
-        document.getElementById('current-ticker').innerText = `${currentCoin}/USDT ⚡`;
-        closeModal('searchModal');
-        document.getElementById('coinSearchInput').value = '';
-
-        initAdvancedChart(newSymbol);
-        setTimeout(drawChartLines, 1500); 
-    }
-
-    // --- ТОРГОВЛЯ И ПОЗИЦИИ ---
-    function setMode(m) {
-        currentMode = m;
-        const slider = document.getElementById('toggle-slider');
-        if (m === 'buy') {
-            slider.classList.remove('sell');
-            document.getElementById('t-buy').className = 't-btn active-buy';
-            document.getElementById('t-sell').className = 't-btn';
-            document.getElementById('exec').innerText = 'Открыть Лонг';
-        } else {
-            slider.classList.add('sell');
-            document.getElementById('t-buy').className = 't-btn';
-            document.getElementById('t-sell').className = 't-btn active-sell';
-            document.getElementById('exec').innerText = 'Открыть Шорт';
-        }
-        document.getElementById('exec').className = `exec-btn ${m}`;
-    }
-
-    function updateLeverage(val) {
-        currentLeverage = parseInt(val);
-        document.getElementById('lev-display').innerText = 'x' + val;
-    }
-
-    function setPct(p) {
-        document.getElementById('amt').value = Math.floor(currentBalance * (p / 100));
-    }
-
-    function showToast(msg, type) {
-        const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.style.borderLeftColor = type === 'error' ? 'var(--red)' : 'var(--green)';
-        t.classList.remove('toast-hide'); t.classList.add('toast-show');
-        setTimeout(() => { t.classList.remove('toast-show'); t.classList.add('toast-hide'); }, 2500);
-    }
-
-    async function openPosition() {
-        const amt = parseFloat(document.getElementById('amt').value);
-        if (isNaN(amt) || amt <= 0) return showToast('Введите сумму', 'error');
-        if (amt > currentBalance) return showToast('Недостаточно средств', 'error');
-
-        // Рассчитываем данные позиции
-        const size = amt * currentLeverage;
-        const entryPrice = currentPrice; 
-        let liqPrice;
-
-        // Формула ликвидации (упрощенная)
-        if (currentMode === 'buy') { // Лонг
-            liqPrice = entryPrice - (entryPrice / currentLeverage);
-        } else { // Шорт
-            liqPrice = entryPrice + (entryPrice / currentLeverage);
-        }
-
-        const newPosition = {
-            coin: currentCoin,
-            type: currentMode,
-            margin: amt,
-            leverage: currentLeverage,
-            size: size,
-            entryPrice: entryPrice,
-            liqPrice: liqPrice,
-            timestamp: Date.now()
-        };
-
-        // Списываем баланс и сохраняем позицию
-        currentBalance -= amt;
-        await db.ref('users/' + user).update({ balance: currentBalance });
-        await db.ref('users/' + user + '/positions').push(newPosition);
-
-        showToast(`${currentMode === 'buy' ? 'Лонг' : 'Шорт'} открыт с плечом x${currentLeverage}`, 'success');
-        document.getElementById('amt').value = '';
-        switchTab('positions');
-    }
-
-    // Закрытие позиции
-    async function closePosition(id) {
-        const pos = openPositions.find(p => p.id === id);
-        if (!pos) return;
-
-        // Рассчитываем PnL (упрощенно: если цена изменилась в нашу сторону - прибыль)
-        let pnl = 0;
-        // В реальном коде мы бы брали текущую цену с биржи. Тут имитация:
-        const priceDiff = (currentPrice - pos.entryPrice) / pos.entryPrice;
-        
-        if (pos.type === 'long') {
-            pnl = pos.margin * (priceDiff * pos.leverage);
-        } else {
-            pnl = pos.margin * (-priceDiff * pos.leverage);
-        }
-
-        // Если убыток больше маржи - ликвидация (теряем всё)
-        if (pnl < -pos.margin) pnl = -pos.margin;
-
-        const returnAmount = pos.margin + pnl;
-        currentBalance += returnAmount;
-        
-        await db.ref('users/' + user).update({ balance: currentBalance });
-        await db.ref('users/' + user + '/positions/' + id).remove();
-
-        showToast(`Позиция закрыта. PnL: ${pnl > 0 ? '+' : ''}${pnl.toFixed(2)} ₽`, pnl >= 0 ? 'success' : 'error');
-    }
-
-    // --- ОТРИСОВКА ПОЗИЦИЙ ---
-    function renderPositions() {
-        const list = document.getElementById('positions-list');
-        list.innerHTML = '';
-
-        if (openPositions.length === 0) {
-            list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Нет открытых позиций</div>';
-            return;
-        }
-
-        openPositions.forEach(pos => {
-            let pnl = 0;
-            const priceDiff = (currentPrice - pos.entryPrice) / pos.entryPrice;
-            
-            if (pos.type === 'long') pnl = pos.margin * (priceDiff * pos.leverage);
-            else pnl = pos.margin * (-priceDiff * pos.leverage);
-
-            const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
-            
-            list.innerHTML += `
-                <div class="position-item">
-                    <div class="pos-header">
-                        <span>${pos.coin}/USDT</span>
-                        <span class="${pos.type === 'long' ? 'pos-long' : 'pos-short'}">${pos.type === 'long' ? 'LONG' : 'SHORT'} x${pos.leverage}</span>
-                    </div>
-                    <div class="pos-details">
-                        <span>Маржа: ${pos.margin.toFixed(2)} ₽</span>
-                        <span>Вход: ${pos.entryPrice.toFixed(2)}</span>
-                    </div>
-                    <div class="pos-details">
-                        <span>Ликв: ${pos.liqPrice.toFixed(2)}</span>
-                        <span class="pos-pnl" style="color:${pnlColor}">${pnl > 0 ? '+' : ''}${pnl.toFixed(2)} ₽</span>
-                    </div>
-                    <button class="close-pos-btn" onclick="closePosition('${pos.id}')">Закрыть по рынку</button>
-                </div>
-            `;
-        });
-    }
-
-    // --- ИНТЕРФЕЙС ---
-    function switchTab(tab) {
-        document.querySelectorAll('.p-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        
-        if(tab === 'trade') {
-            document.querySelectorAll('.p-tab')[0].classList.add('active');
-            document.getElementById('tab-trade').classList.add('active');
-        } else {
-            document.querySelectorAll('.p-tab')[1].classList.add('active');
-            document.getElementById('tab-positions').classList.add('active');
-            renderPositions(); // Обновляем при открытии
-        }
-    }
-
-    function openModal(id) { document.getElementById(id).classList.add('show'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-
-    // Вспомогательная функция для симуляции цены (чтобы PnL шевелился)
-    setInterval(() => {
-        // Случайное изменение цены на +-0.5% каждые 3 секунды
-        const change = (Math.random() - 0.5) * 0.01;
-        currentPrice += currentPrice * change;
-        if (openPositions.length > 0) {
-            renderPositions(); // Обновляем список
-            drawChartLines();  // Перерисовываем линии
-        }
-    }, 3000);
-
-    setMode('buy');
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.style.opacity = '1';
+    setTimeout(() => t.style.opacity = '0', 2000);
+  }
 </script>
 </body>
 </html>
