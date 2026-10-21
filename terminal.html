@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Trading Terminal</title>
+    <title>Axiom Terminal - TradingView</title>
     <style>
         :root {
             --bg: #0b0e11; --panel: #1e2329; --text: #eaecef; --muted: #848e9c;
@@ -13,25 +13,36 @@
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; height: 100vh; overflow: hidden; }
         .app { width: 100%; max-width: 500px; display: flex; flex-direction: column; border-left: 1px solid #2b3139; border-right: 1px solid #2b3139; position: relative; }
 
+        /* Header */
         .hdr { display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #2b3139; align-items: center; background: var(--bg); z-index: 10; }
         .back-btn { color: var(--blue); text-decoration: none; font-size: 15px; font-weight: 600; }
         .wallet { background: var(--panel); padding: 5px 10px; border-radius: 15px; font-size: 13px; font-weight: bold; color: var(--blue); }
 
-        .open-tv-btn {
-            display: block; background: #2962ff; color: white; text-align: center;
-            padding: 12px; margin: 10px 15px; border-radius: 8px; text-decoration: none;
-            font-weight: bold; font-size: 14px;
-        }
-        .open-tv-btn:active { background: #1e4bd8; }
+        /* Token Info */
+        .tok-hdr { display: flex; align-items: center; padding: 10px 15px; gap: 10px; border-bottom: 1px solid #2b3139; }
+        .tok-ico { width: 30px; height: 30px; background: var(--blue); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; }
+        .tok-nm { font-weight: bold; font-size: 14px; }
+        .tok-mc { font-size: 12px; color: var(--muted); font-weight: normal; margin-left: 5px; }
 
-        .tv-widget-container { flex-grow: 1; padding: 0 15px; position: relative; }
-        .tradingview-widget-container { height: 100%; width: 100%; }
+        /* TradingView Chart Container */
+        .chart-container { flex-grow: 1; position: relative; background: #000; }
+        #tradingview_widget { height: 100%; width: 100%; }
 
-        .panel { padding: 15px; display: flex; flex-direction: column; gap: 12px; background: var(--bg); }
+        /* Stats */
+        .stats { display: flex; justify-content: space-between; padding: 10px 15px; background: var(--panel); font-size: 12px; color: var(--muted); border-top: 1px solid #2b3139; border-bottom: 1px solid #2b3139; }
+        .stat-v { color: var(--text); font-weight: bold; font-size: 14px; display: block; margin-top: 2px; }
+
+        /* Panel */
+        .panel { padding: 15px; display: flex; flex-direction: column; gap: 10px; background: var(--bg); }
+        .toggle { display: flex; background: var(--panel); border-radius: 10px; overflow: hidden; }
+        .t-btn { flex: 1; padding: 12px; text-align: center; font-weight: bold; cursor: pointer; color: var(--muted); }
+        .t-buy { background: rgba(14,203,129,.1); color: var(--green); border-bottom: 2px solid var(--green); }
+        .t-sell { background: rgba(246,70,93,.1); color: var(--red); border-bottom: 2px solid var(--red); }
+
         .input-box { display: flex; background: var(--panel); border-radius: 10px; padding: 10px 15px; align-items: center; }
         .input-box input { background: none; border: none; color: var(--text); font-size: 20px; font-weight: bold; width: 100%; outline: none; }
-        
-        .pcts { display: flex; gap: 10px; margin-bottom: 5px; }
+
+        .pcts { display: flex; gap: 10px; }
         .pct-btn { flex: 1; background: var(--panel); border: none; color: var(--text); padding: 8px 0; border-radius: 5px; font-size: 12px; cursor: pointer; }
 
         .exec-btn { padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
@@ -46,36 +57,41 @@
     <div id="toast"></div>
 
     <div class="hdr">
-        <a href="apple_pay.html" class="back-btn" onclick="playSound('click')">‹ Назад</a>
-        <div class="wallet">💰 <span id="rub-balance">0</span> ₽</div>
+        <a href="apple_pay.html" class="back-btn" onclick="playSound('click')">‹ Назад в Wallet</a>
+        <div class="wallet">💰 <span id="sol">0.00</span> SOL</div>
     </div>
 
-    <a href="https://ru.tradingview.com/chart/" target="_blank" class="open-tv-btn" onclick="playSound('click')">
-        🌐 Открыть TradingView на весь экран
-    </a>
+    <div class="tok-hdr">
+        <div class="tok-ico">M</div>
+        <div class="tok-nm">MISTER LIAR<span class="tok-mc" id="rub-balance">Баланс: 0 ₽</span></div>
+    </div>
 
-    <div class="tv-widget-container">
-        <div class="tradingview-widget-container">
-            <div id="tradingview_widget"></div>
-        </div>
+    <!-- ГРАФИК TRADINGVIEW -->
+    <div class="chart-container">
+        <div id="tradingview_widget"></div>
+    </div>
+
+    <div class="stats">
+        <div>Токены<span class="stat-v" id="tkn">0.00</span></div>
+        <div>Ср. цена<span class="stat-v" id="avg">$0.00</span></div>
+        <div>PnL<span class="stat-v" id="pnl" style="color:var(--muted)">0%</span></div>
     </div>
 
     <div class="panel">
-        <div class="input-box">
-            <input type="number" id="amt" placeholder="Сумма в ₽" step="100">
-            <span style="color:var(--muted)">₽</span>
+        <div class="toggle">
+            <div class="t-btn t-buy" id="t-buy" onclick="setMode('buy')">Buy</div>
+            <div class="t-btn" id="t-sell" onclick="setMode('sell')">Sell</div>
         </div>
-        
+        <div class="input-box">
+            <input type="number" id="amt" placeholder="0.0" step="0.001"><span style="color:var(--muted)">SOL</span>
+        </div>
         <div class="pcts">
+            <button class="pct-btn" onclick="setPct(10)">10%</button>
             <button class="pct-btn" onclick="setPct(25)">25%</button>
             <button class="pct-btn" onclick="setPct(50)">50%</button>
-            <button class="pct-btn" onclick="setPct(100)">MAX</button>
+            <button class="pct-btn" onclick="setPct(100)">100%</button>
         </div>
-
-        <div style="display: flex; gap: 10px;">
-            <button class="exec-btn ex-buy" style="flex:1" onclick="trade('buy')">Купить</button>
-            <button class="exec-btn ex-sell" style="flex:1" onclick="trade('sell')">Продать</button>
-        </div>
+        <button class="exec-btn ex-buy" id="exec" onclick="trade()">Купить</button>
     </div>
 </div>
 
@@ -87,42 +103,49 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const user = localStorage.getItem('walletUser');
-
     if (!user) window.location.href = 'index.html';
 
-    let currentBalance = 0;
+    const RATE = 15000; 
+    let isProcessing = false;
+    let currentMode = 'buy';
 
-    // --- ФУНКЦИЯ ВОСПРОИЗВЕДЕНИЯ ЗВУКОВ ---
+    // Состояние для симулятора (как на скрине)
+    let rubBalance = 0;
+    let solBalance = 0;
+    let tknBalance = 0;
+    let avgPrice = 0;
+    let currentPrice = 0.00337;
+
     function playSound(soundName) {
         try {
-            // Если файлы лежат в корне, путь будет просто 'buy.mp3'
             const audio = new Audio(soundName + '.mp3');
-            audio.volume = 0.5; // Громкость 50%
-            audio.play().catch(e => console.log('Звук заблокирован браузером', e));
-        } catch (e) {
-            console.log('Ошибка звука', e);
-        }
+            audio.volume = 0.5;
+            audio.play().catch(e => {});
+        } catch (e) {}
     }
 
-    // Слушаем баланс
+    // Обновление баланса из Firebase
     db.ref('users/' + user + '/balance').on('value', snap => {
-        currentBalance = snap.val() || 0;
-        document.getElementById('rub-balance').innerText = currentBalance.toLocaleString();
+        rubBalance = snap.val() || 0;
+        solBalance = rubBalance / RATE;
+        document.getElementById('rub-balance').innerText = `Баланс: ${rubBalance.toLocaleString()} ₽`;
+        document.getElementById('sol').innerText = solBalance.toFixed(4);
+        updateUI();
     });
 
-    // Инициализация виджета TradingView
+    // Инициализация Графика TradingView
     function initTradingView() {
         new TradingView.widget({
             "autosize": true,
-            "symbol": "BINANCE:SOLUSDT",
+            "symbol": "BINANCE:SOLUSDT", // График Solana
             "interval": "15",
             "timezone": "Etc/UTC",
             "theme": "dark",
-            "style": "1",
+            "style": "1", // Свечи
             "locale": "ru",
             "toolbar_bg": "#f1f3f6",
             "enable_publishing": false,
-            "allow_symbol_change": true,
+            "allow_symbol_change": true, // Можно искать другие монеты
             "container_id": "tradingview_widget"
         });
     }
@@ -132,38 +155,22 @@
     script.onload = initTradingView;
     document.head.appendChild(script);
 
-    // Расчет процентов
-    function setPct(p) {
-        playSound('click'); // Звук клика
-        const amtInput = document.getElementById('amt');
-        amtInput.value = Math.floor(currentBalance * (p / 100));
+    // --- ЛОГИКА ТОРГОВЛИ ---
+    function setMode(m) {
+        playSound('click');
+        currentMode = m;
+        document.getElementById('t-buy').className = 't-btn ' + (m === 'buy' ? 't-buy' : '');
+        document.getElementById('t-sell').className = 't-btn ' + (m === 'sell' ? 't-sell' : '');
+        const btn = document.getElementById('exec');
+        btn.className = 'exec-btn ' + (m === 'buy' ? 'ex-buy' : 'ex-sell');
+        btn.innerText = m === 'buy' ? 'Купить' : 'Продать';
     }
 
-    // Торговля (симулятор)
-    async function trade(mode) {
-        const amt = parseFloat(document.getElementById('amt').value);
-        
-        if (isNaN(amt) || amt <= 0) {
-            playSound('error'); // Звук ошибки
-            return toast('Введите сумму', 'var(--red)');
-        }
-
-        if (mode === 'buy') {
-            if (amt > currentBalance) {
-                playSound('error'); // Ошибка (недостаточно средств)
-                return toast('Недостаточно средств', 'var(--red)');
-            }
-            currentBalance -= amt;
-            playSound('buy'); // Звук покупки
-            toast(`Куплено на ${amt.toLocaleString()} ₽`, 'var(--green)');
-        } else {
-            currentBalance += amt;
-            playSound('sell'); // Звук продажи
-            toast(`Продано на ${amt.toLocaleString()} ₽`, 'var(--green)');
-        }
-
-        await db.ref('users/' + user).update({ balance: currentBalance });
-        document.getElementById('amt').value = '';
+    function setPct(p) {
+        playSound('click');
+        const inp = document.getElementById('amt');
+        if (currentMode === 'buy') inp.value = (solBalance * p / 100).toFixed(4);
+        else inp.value = ((tknBalance * currentPrice) * p / 100).toFixed(4);
     }
 
     function toast(msg, clr) {
@@ -171,6 +178,70 @@
         t.innerText = msg; t.style.borderLeft = '4px solid ' + clr; t.style.opacity = '1';
         setTimeout(() => t.style.opacity = '0', 2500);
     }
+
+    async function trade() {
+        if (isProcessing) return;
+        const amt = parseFloat(document.getElementById('amt').value);
+        if (isNaN(amt) || amt <= 0) {
+            playSound('error');
+            return toast('Введите сумму', 'var(--red)');
+        }
+        
+        const rubAmount = amt * RATE;
+        isProcessing = true;
+        const btn = document.getElementById('exec');
+        btn.disabled = true;
+
+        if (currentMode === 'buy') {
+            if (rubAmount > rubBalance) {
+                playSound('error');
+                toast('Недостаточно рублей на балансе', 'var(--red)');
+                isProcessing = false; btn.disabled = false; return;
+            }
+            const tokensBought = amt / currentPrice;
+            const currentTotalValue = tknBalance * avgPrice;
+            const newTotalValue = currentTotalValue + amt;
+            tknBalance += tokensBought;
+            avgPrice = newTotalValue / tknBalance;
+            rubBalance -= rubAmount;
+
+            await db.ref('users/' + user).update({ balance: rubBalance });
+            playSound('buy');
+            toast(`Куплено ${tokensBought.toFixed(2)} токенов`, 'var(--green)');
+            document.getElementById('amt').value = '';
+
+        } else {
+            const tokensToSell = amt / currentPrice;
+            if (tokensToSell > tknBalance) {
+                playSound('error');
+                toast('Недостаточно токенов', 'var(--red)');
+                isProcessing = false; btn.disabled = false; return;
+            }
+            tknBalance -= tokensToSell;
+            rubBalance += rubAmount;
+            if (tknBalance < 0.0001) { tknBalance = 0; avgPrice = 0; }
+
+            await db.ref('users/' + user).update({ balance: rubBalance });
+            playSound('sell');
+            toast(`Продано на ${rubAmount.toLocaleString()} ₽`, 'var(--green)');
+            document.getElementById('amt').value = '';
+        }
+        
+        updateUI();
+        setTimeout(() => { isProcessing = false; btn.disabled = false; }, 500);
+    }
+
+    function updateUI() {
+        document.getElementById('tkn').innerText = tknBalance.toFixed(2);
+        document.getElementById('avg').innerText = tknBalance > 0 ? '$' + avgPrice.toFixed(5) : '$0.00';
+        const pnlEl = document.getElementById('pnl');
+        if (tknBalance > 0) {
+            const pct = (((tknBalance * currentPrice) - (tknBalance * avgPrice)) / (tknBalance * avgPrice)) * 100;
+            pnlEl.innerText = (pct > 0 ? '+' : '') + pct.toFixed(2) + '%';
+            pnlEl.style.color = pct > 0 ? 'var(--green)' : pct < 0 ? 'var(--red)' : 'var(--muted)';
+        } else { pnlEl.innerText = '0%'; pnlEl.style.color = 'var(--muted)'; }
+    }
+
 </script>
 </body>
 </html>
