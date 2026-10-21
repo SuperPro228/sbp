@@ -8,8 +8,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         :root {
-            --bg-main: #131722;        /* Фон как в TV */
-            --bg-panel: #1e222d;       /* Панели */
+            --bg-main: #131722;
+            --bg-panel: #1e222d;
             --bg-hover: #2a2e39;
             --border: #2a2e39;
             --text-main: #d1d4dc;
@@ -24,29 +24,26 @@
         
         .app { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; }
 
-        /* Адаптация под ПК */
         @media (min-width: 900px) {
             .app { flex-direction: row; }
             .left-panel { flex: 1; display: flex; flex-direction: column; border-right: 1px solid var(--border); position: relative; }
             .right-panel { width: 340px; display: flex; flex-direction: column; background: var(--bg-panel); flex-shrink: 0; }
         }
 
-        /* --- ВЕРХНЯЯ ПАНЕЛЬ --- */
+        /* --- ВЕРХНЯЯ ПАНЕЛЬ (Кастомная) --- */
         .top-toolbar { display: flex; align-items: center; padding: 0 10px; height: 40px; background: var(--bg-main); border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-muted); gap: 15px; overflow-x: auto; white-space: nowrap; }
         .top-toolbar .ticker { color: var(--blue); font-weight: 700; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .top-toolbar .ticker:hover { color: #5383ff; }
         .top-toolbar .tools { display: flex; gap: 12px; }
         .top-toolbar .tools span { cursor: pointer; padding: 2px 4px; border-radius: 3px; transition: 0.2s; }
         .top-toolbar .tools span:hover { background: var(--bg-hover); color: var(--text-main); }
         .top-toolbar .tools span.active { color: var(--blue); font-weight: bold; }
 
-        .ohlc-bar { display: flex; gap: 15px; padding: 8px 10px; font-size: 12px; background: var(--bg-main); border-bottom: 1px solid var(--border); color: var(--text-muted); }
-        .ohlc-bar span.val { color: var(--text-main); }
-        .ohlc-bar span.up { color: var(--green); }
-
-        /* --- ГРАФИК --- */
+        /* --- КОНТЕЙНЕР ГРАФИКА --- */
         .chart-container { flex: 1 1 auto; position: relative; background: var(--bg-main); min-height: 300px; }
-        #tradingview_widget { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+        
+        /* Контейнер для продвинутого виджета */
+        .tradingview-widget-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .tradingview-widget-container__widget { width: 100%; height: 100%; }
 
         /* Линия Ордера */
         .order-line {
@@ -63,8 +60,7 @@
 
         /* --- ПРАВАЯ ПАНЕЛЬ --- */
         .panel-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-main); }
-        .p-tab { flex: 1; text-align: center; padding: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: 0.2s; }
-        .p-tab:hover { color: var(--text-main); }
+        .p-tab { flex: 1; text-align: center; padding: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; }
         .p-tab.active { color: var(--text-main); border-bottom-color: var(--blue); }
 
         .tab-content { display: none; flex-direction: column; flex: 1; overflow-y: auto; }
@@ -76,75 +72,55 @@
         .toggle-slider { position: absolute; top: 3px; left: 3px; width: calc(50% - 3px); height: calc(100% - 6px); background: var(--bg-panel); border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
         .toggle-slider.sell { transform: translateX(100%); }
 
-        .t-btn { flex: 1; padding: 10px; text-align: center; font-weight: 600; font-size: 14px; cursor: pointer; color: var(--text-muted); position: relative; z-index: 2; transition: 0.2s; }
+        .t-btn { flex: 1; padding: 10px; text-align: center; font-weight: 600; font-size: 14px; cursor: pointer; color: var(--text-muted); position: relative; z-index: 2; }
         .t-btn.active-buy { color: var(--green); }
         .t-btn.active-sell { color: var(--red); }
 
-        .input-box { display: flex; align-items: center; background: var(--bg-main); border: 1px solid var(--border); border-radius: 4px; padding: 10px 14px; transition: border 0.2s; }
-        .input-box:focus-within { border-color: var(--blue); }
+        .input-box { display: flex; align-items: center; background: var(--bg-main); border: 1px solid var(--border); border-radius: 4px; padding: 10px 14px; }
         .input-box input { background: none; border: none; color: var(--text-main); font-size: 22px; font-weight: 600; width: 100%; outline: none; }
 
         .pcts { display: flex; gap: 6px; }
-        .pct-btn { flex: 1; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 8px 0; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .pct-btn { flex: 1; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 8px 0; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
         .pct-btn:hover { background: var(--bg-hover); }
 
-        .exec-btn { width: 100%; padding: 16px; border: none; border-radius: 4px; font-size: 16px; font-weight: 700; cursor: pointer; color: #fff; transition: 0.2s; }
+        .exec-btn { width: 100%; padding: 16px; border: none; border-radius: 4px; font-size: 16px; font-weight: 700; cursor: pointer; color: #fff; }
         .exec-btn.buy { background: var(--green); }
-        .exec-btn.buy:hover { background: #0aa78c; }
         .exec-btn.sell { background: var(--red); }
-        .exec-btn.sell:hover { background: #d12d3c; }
-
-        .order-book { padding: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
-        .ob-row { display: flex; justify-content: space-between; position: relative; padding: 3px 6px; cursor: pointer; }
-        .ob-row:hover .bg { opacity: 1; }
-        .ob-row .bg { position: absolute; top: 0; right: 0; height: 100%; background: rgba(242, 54, 69, 0.15); z-index: 0; transition: 0.2s; opacity: 0.7; }
-        .ob-row .bg.green { background: rgba(8, 153, 129, 0.15); }
-        .ob-row span { position: relative; z-index: 1; }
-        .ob-price.red { color: var(--red); }
-        .ob-price.green { color: var(--green); }
-        .ob-mid { text-align: center; font-size: 20px; font-weight: 700; padding: 12px 0; color: var(--text-main); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 8px 0; }
 
         /* --- МОДАЛЬНЫЕ ОКНА --- */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .modal.show { display: flex; opacity: 1; }
-        .modal-content { width: 90%; max-width: 400px; background: var(--bg-panel); border-radius: 8px; padding: 24px; transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-content { width: 90%; max-width: 400px; background: var(--bg-panel); border-radius: 8px; padding: 24px; transform: translateY(20px); transition: transform 0.3s; border: 1px solid var(--border); }
         .modal.show .modal-content { transform: translateY(0); }
         
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-title { font-size: 18px; font-weight: 600; color: var(--text-main); }
-        .close-btn { background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.2s; }
-        .close-btn:hover { color: var(--text-main); }
+        .modal-title { font-size: 18px; font-weight: 600; }
+        .close-btn { background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; }
 
-        .coins-list { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; max-height: 60vh; }
+        .coins-list { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .coin-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); padding: 16px; border-radius: 4px; border: 1px solid var(--border); }
         .coin-info { display: flex; align-items: center; gap: 12px; }
         .coin-icon { width: 36px; height: 36px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--blue); }
-        .coin-symbol { font-weight: 600; font-size: 15px; color: var(--text-main); }
-        .coin-amount { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .coin-symbol { font-weight: 600; font-size: 15px; }
+        .coin-amount { font-size: 12px; color: var(--text-muted); }
         .coin-value { text-align: right; }
         .coin-rub { font-weight: 700; font-size: 15px; color: var(--green); }
 
-        .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
-        .settings-row:last-child { border-bottom: none; }
-        .theme-toggle { display: flex; background: var(--bg-main); border-radius: 4px; border: 1px solid var(--border); overflow: hidden; }
-        .theme-btn { padding: 8px 16px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
-        .theme-btn.active { background: var(--blue); color: #fff; }
-
-        .search-input { width: 100%; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 14px; border-radius: 4px; font-size: 16px; outline: none; margin-bottom: 15px; transition: 0.2s; }
+        .search-input { width: 100%; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 14px; border-radius: 4px; font-size: 16px; outline: none; margin-bottom: 15px; }
         .search-input:focus { border-color: var(--blue); }
 
-        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--bg-panel); color: var(--text-main); padding: 12px 24px; border-radius: 4px; font-size: 14px; border-left: 3px solid var(--blue); opacity: 0; pointer-events: none; z-index: 200; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--bg-panel); color: var(--text-main); padding: 12px 24px; border-radius: 4px; font-size: 14px; border-left: 3px solid var(--blue); opacity: 0; pointer-events: none; z-index: 200; display: none; }
         .toast-show { display: block !important; animation: toastIn 0.3s forwards; }
         .toast-hide { animation: toastOut 0.3s forwards; }
         @keyframes toastIn { 0% { transform: translate(-50%, -20px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
         @keyframes toastOut { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
     </style>
 </head>
-<body id="body">
+<body>
 <div class="app">
     <div id="toast"></div>
 
-    <!-- Кошелек -->
+    <!-- Модалки -->
     <div class="modal" id="walletModal" onclick="closeModal('walletModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -155,32 +131,14 @@
         </div>
     </div>
 
-    <!-- Настройки -->
-    <div class="modal" id="settingsModal" onclick="closeModal('settingsModal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <div class="modal-title">Настройки</div>
-                <button class="close-btn" onclick="closeModal('settingsModal')">×</button>
-            </div>
-            <div class="settings-row">
-                <span>Тема интерфейса</span>
-                <div class="theme-toggle">
-                    <button class="theme-btn active" id="theme-dark" onclick="setTheme('dark')">Темная</button>
-                    <button class="theme-btn" id="theme-light" onclick="setTheme('light')">Светлая</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Поиск монеты -->
     <div class="modal" id="searchModal" onclick="closeModal('searchModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <div class="modal-title">Поиск тикера</div>
                 <button class="close-btn" onclick="closeModal('searchModal')">×</button>
             </div>
-            <input type="text" class="search-input" id="coinSearchInput" placeholder="Например: BTCUSDT, ETHUSDT, TONUSDT" autocomplete="off">
-            <button class="exec-btn buy" onclick="changeCoin()" style="background: var(--blue); border-radius: 4px;">Загрузить график</button>
+            <input type="text" class="search-input" id="coinSearchInput" placeholder="Например: BTCUSDT, ETHUSDT" autocomplete="off">
+            <button class="exec-btn buy" onclick="changeCoin()" style="background: var(--blue);">Загрузить график</button>
         </div>
     </div>
 
@@ -188,30 +146,21 @@
     <div class="left-panel">
         <div class="top-toolbar">
             <div class="ticker" onclick="openModal('searchModal')" id="current-ticker">SOL/USDT ⚡</div>
-            <div class="tools">
-                <span onclick="changeTimeframe('1', this)">1м</span>
-                <span onclick="changeTimeframe('5', this)">5м</span>
-                <span class="active" onclick="changeTimeframe('15', this)">15м</span>
-                <span onclick="changeTimeframe('60', this)">1ч</span>
-                <span onclick="changeTimeframe('240', this)">4ч</span>
-                <span onclick="changeTimeframe('D', this)">1Д</span>
-            </div>
-        </div>
-        <div class="ohlc-bar">
-            <span>ОТКР <span class="val">106.10</span></span>
-            <span>МАКС <span class="val up">106.50</span></span>
-            <span>МИН <span class="val">105.90</span></span>
-            <span>ЗАКР <span class="val up" id="current-price">106.28</span></span>
         </div>
 
         <div class="chart-container">
+            <!-- Линия Ордера -->
             <div class="order-line" id="orderLine">
                 <div class="order-badge">
                     <span>New order</span>
                     <span class="price" id="orderPrice">0.00</span>
                 </div>
             </div>
-            <div id="tradingview_widget"></div>
+            
+            <!-- ПРОДВИНУТЫЙ ВИДЖЕТ TRADINGVIEW (Позволяет менять монеты внутри) -->
+            <div class="tradingview-widget-container">
+                <div class="tradingview-widget-container__widget" id="tv_chart"></div>
+            </div>
         </div>
     </div>
 
@@ -219,8 +168,7 @@
     <div class="right-panel">
         <div class="panel-tabs">
             <div class="p-tab active" onclick="switchTab('trade')">Торговля</div>
-            <div class="p-tab" onclick="switchTab('book')">Стакан</div>
-            <div class="p-tab" style="flex:0.5; font-size:16px;" onclick="openModal('settingsModal')">⚙️</div>
+            <div class="p-tab" onclick="openModal('walletModal')">Кошелек</div>
         </div>
 
         <div class="tab-content active" id="tab-trade">
@@ -248,12 +196,11 @@
                 <button class="exec-btn buy" id="exec" onclick="trade()">Купить по рынку</button>
             </div>
         </div>
-
-        <div class="tab-content" id="tab-book">
-            <div class="order-book" id="orderBook"></div>
-        </div>
     </div>
 </div>
+
+<!-- СКРИПТ ПРОДВИНУТОГО ВИДЖЕТА -->
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -266,11 +213,7 @@
 
     let currentBalance = 0;
     let currentMode = 'buy';
-    
     let currentCoin = "SOL";
-    let currentSymbol = "BINANCE:SOLUSDT"; 
-    let currentInterval = "15";
-    
     let virtualPrice = 106.28; 
     let entryPrice = 0;
     let myCoins = 0;
@@ -298,91 +241,46 @@
         });
     }
 
-    // --- ГРАФИК ---
-    let tvWidget = null;
-    function initTradingView() {
-        document.getElementById('tradingview_widget').innerHTML = '';
-        
-        tvWidget = new TradingView.widget({
-            "autosize": true, 
-            "symbol": currentSymbol, 
-            "interval": currentInterval,
-            "timezone": "Etc/UTC", 
-            "theme": document.body.classList.contains('light-theme') ? "light" : "dark", 
-            "style": "1", 
+    // --- ПРОДВИНУТЫЙ ГРАФИК TRADINGVIEW ---
+    function initAdvancedChart(symbol) {
+        document.getElementById('tv_chart').innerHTML = '';
+        new TradingView.widget({
+            "width": "100%",
+            "height": "100%",
+            "symbol": symbol || "BINANCE:SOLUSDT",
+            "interval": "15",
+            "timezone": "Etc/UTC",
+            "theme": "dark",
+            "style": "1",
             "locale": "ru",
-            "enable_publishing": false, 
-            // ВАЖНО: Разрешаем изменение символа прямо в виджете
+            // ВОТ ОНА, МАГИЯ: Включает полный тулбар с поиском и рисованием!
+            "toolbar_bg": "#f1f3f6",
+            "enable_publishing": false,
             "allow_symbol_change": true, 
-            "container_id": "tradingview_widget",
-            "backgroundColor": document.body.classList.contains('light-theme') ? "#f4f4f4" : "#131722", 
-            "gridColor": document.body.classList.contains('light-theme') ? "#e0e3eb" : "#2a2e39",
-            "hide_top_toolbar": false
+            "container_id": "tv_chart",
+            "hide_side_toolbar": false // Включает панель рисования слева
         });
     }
-    
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/tv.js';
-    script.onload = initTradingView;
-    document.head.appendChild(script);
+    initAdvancedChart("BINANCE:SOLUSDT");
 
-    // Смена таймфрейма
-    function changeTimeframe(interval, btn) {
-        currentInterval = interval;
-        document.querySelectorAll('.top-toolbar .tools span').forEach(s => s.classList.remove('active'));
-        btn.classList.add('active');
-        initTradingView();
-    }
-
-    // Смена монеты через модалку
+    // Смена монеты через нашу модалку
     function changeCoin() {
         let inputVal = document.getElementById('coinSearchInput').value.trim().toUpperCase();
         if (!inputVal) return;
         if (!inputVal.includes('USDT')) inputVal += 'USDT';
 
-        currentSymbol = "BINANCE:" + inputVal;
+        let newSymbol = "BINANCE:" + inputVal;
         currentCoin = inputVal.replace('USDT', '');
 
         document.getElementById('current-ticker').innerText = `${currentCoin}/USDT ⚡`;
         closeModal('searchModal');
         document.getElementById('coinSearchInput').value = '';
 
-        initTradingView();
+        initAdvancedChart(newSymbol);
         loadPortfolio();
     }
 
-    // --- СТАКАН (Имитация) ---
-    function updateMarket() {
-        let change = (Math.random() - 0.5) * 0.4;
-        virtualPrice += change;
-        
-        const priceEl = document.getElementById('current-price');
-        if(priceEl) {
-            priceEl.innerText = virtualPrice.toFixed(2);
-            priceEl.className = 'val ' + (change > 0 ? 'up' : '');
-        }
-
-        const book = document.getElementById('orderBook');
-        if(!book) return;
-        
-        let html = '';
-        for (let i = 5; i >= 1; i--) {
-            let p = (virtualPrice + (i * 0.05)).toFixed(2);
-            let width = Math.random() * 80 + 10;
-            html += `<div class="ob-row"><div class="bg" style="width:${width}%"></div><span class="ob-price red">${p}</span><span>${(Math.random()*2).toFixed(3)}</span></div>`;
-        }
-        html += `<div class="ob-mid">${virtualPrice.toFixed(2)}</div>`;
-        for (let i = 1; i <= 5; i++) {
-            let p = (virtualPrice - (i * 0.05)).toFixed(2);
-            let width = Math.random() * 80 + 10;
-            html += `<div class="ob-row"><div class="bg green" style="width:${width}%"></div><span class="ob-price green">${p}</span><span>${(Math.random()*2).toFixed(3)}</span></div>`;
-        }
-        book.innerHTML = html;
-    }
-    setInterval(updateMarket, 1500);
-    updateMarket();
-
-    // --- ТОРГОВЛЯ ---
+    // --- ОСТАЛЬНАЯ ЛОГИКА ---
     function setMode(m) {
         currentMode = m;
         const slider = document.getElementById('toggle-slider');
@@ -495,16 +393,12 @@
         `;
     }
 
-    // --- ИНТЕРФЕЙС ---
     function switchTab(tab) {
         document.querySelectorAll('.p-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         if(tab === 'trade') {
             document.querySelectorAll('.p-tab')[0].classList.add('active');
             document.getElementById('tab-trade').classList.add('active');
-        } else {
-            document.querySelectorAll('.p-tab')[1].classList.add('active');
-            document.getElementById('tab-book').classList.add('active');
         }
     }
 
@@ -516,24 +410,8 @@
     }
     function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
-    function setTheme(theme) {
-        if (theme === 'light') {
-            document.getElementById('body').classList.add('light-theme');
-            document.getElementById('theme-light').classList.add('active');
-            document.getElementById('theme-dark').classList.remove('active');
-            localStorage.setItem('appTheme', 'light');
-        } else {
-            document.getElementById('body').classList.remove('light-theme');
-            document.getElementById('theme-dark').classList.add('active');
-            document.getElementById('theme-light').classList.remove('active');
-            localStorage.setItem('appTheme', 'dark');
-        }
-        initTradingView();
-    }
-
     setMode('buy');
     loadPortfolio(); 
-    if (localStorage.getItem('appTheme') === 'light') setTheme('light');
 </script>
 </body>
 </html>
