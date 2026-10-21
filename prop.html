@@ -3,229 +3,224 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FundingPips Clone</title>
+<title>FundingPips Shop</title>
 <style>
-  :root { --primary: #0b1f4d; --primary-hover: #153270; --bg: #ffffff; --bg-light: #f4f7fb; --text: #1a1a1a; --muted: #666; }
+  :root { --primary: #0b1f4d; --primary-hover: #153270; --bg: #f8f9fa; --card: #ffffff; --text: #1a1a1a; --muted: #666; --green: #10b981; --red: #ef4444; }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   body { background: var(--bg); color: var(--text); }
   
   /* Header */
-  .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid #eaeaea; position: sticky; top: 0; background: rgba(255,255,255,0.95); z-index: 100; }
-  .logo { font-weight: 800; font-size: 20px; color: var(--primary); }
-  .header-actions { display: flex; gap: 15px; align-items: center; }
-  .btn { padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: 0.2s; text-decoration: none; display: inline-block; text-align: center; }
-  .btn-primary { background: var(--primary); color: white; }
-  .btn-primary:hover { background: var(--primary-hover); }
-  .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
-  
-  /* Профиль */
-  .user-profile { display: none; align-items: center; gap: 10px; font-weight: 600; color: var(--primary); }
+  .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: #fff; border-bottom: 1px solid #eaeaea; position: sticky; top: 0; z-index: 100; }
+  .logo { font-weight: 800; font-size: 20px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+  .header-right { display: flex; align-items: center; gap: 20px; }
+  .wallet-balance { background: #eef2ff; color: var(--primary); padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px; }
   
   /* Hero */
-  .hero { display: flex; padding: 60px 40px; max-width: 1200px; margin: 0 auto; align-items: center; gap: 40px; }
-  .hero-text h1 { font-size: 56px; line-height: 1.1; color: var(--primary); margin-bottom: 20px; letter-spacing: -1px; }
-  .hero-text p { font-size: 18px; color: var(--muted); margin-bottom: 30px; }
-  .bottle-mockup { width: 250px; height: 400px; background: linear-gradient(135deg, #e0f2fe, #3b82f6, #1e3a8a); border-radius: 30px; box-shadow: 20px 20px 60px rgba(0,0,0,0.1); transform: rotate(15deg); border: 2px solid #fff; position: relative;}
-  .bottle-mockup::after { content: ''; position: absolute; top: -40px; left: 50%; transform: translateX(-50%); width: 60px; height: 50px; background: linear-gradient(90deg, #9ca3af, #f3f4f6, #9ca3af); border-radius: 5px 5px 0 0; }
+  .hero { text-align: center; padding: 60px 20px; background: linear-gradient(180deg, #fff 0%, var(--bg) 100%); }
+  .hero h1 { font-size: 42px; color: var(--primary); margin-bottom: 15px; letter-spacing: -1px; }
+  .hero p { color: var(--muted); font-size: 18px; }
 
   /* Pricing */
-  .pricing { padding: 60px 40px; background: var(--bg-light); }
-  .pricing-header { text-align: center; margin-bottom: 40px; }
-  .pricing-header h2 { font-size: 32px; color: var(--primary); margin-bottom: 10px; }
-  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; max-width: 1200px; margin: 0 auto; }
-  .card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #eaeaea; display: flex; flex-direction: column; }
-  .card h3 { color: var(--primary); font-size: 20px; margin-bottom: 10px; }
-  .card .price { font-size: 36px; font-weight: 800; color: var(--primary); margin-bottom: 20px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 20px 60px; }
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-bottom: 50px; }
+  .card { background: var(--card); border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #eaeaea; display: flex; flex-direction: column; transition: 0.2s; position: relative; }
+  .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+  .card.popular { border: 2px solid var(--primary); }
+  .card.popular::before { content: 'Популярный'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+  .card h3 { font-size: 18px; color: var(--muted); margin-bottom: 10px; }
+  .card .price { font-size: 40px; font-weight: 800; color: var(--primary); margin-bottom: 20px; }
   .card ul { list-style: none; margin-bottom: 30px; flex-grow: 1; }
-  .card ul li { margin-bottom: 12px; font-size: 14px; color: var(--muted); }
-  .card ul li::before { content: '✓'; color: #10b981; font-weight: bold; margin-right: 8px; }
+  .card ul li { margin-bottom: 12px; font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .card ul li::before { content: '✓'; color: var(--green); font-weight: bold; }
   
-  /* Модалка Apple ID (Точно как на твоем скриншоте) */
-  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
-  .modal-overlay.active { display: flex; }
-  .apple-modal { background: #1c1c1e; border-radius: 20px; padding: 30px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
-  .apple-modal h2 { color: white; font-size: 22px; margin-bottom: 20px; font-weight: 600; }
-  .apple-input { width: 100%; padding: 14px; border-radius: 10px; border: none; background: #e5e5ea; color: black; font-size: 16px; margin-bottom: 15px; outline: none; }
-  .apple-btn { width: 100%; padding: 14px; border-radius: 10px; border: none; background: white; color: black; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 15px; }
-  .apple-link { color: #0a84ff; font-size: 14px; text-decoration: none; cursor: pointer; }
+  .btn { padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: 0.2s; text-align: center; }
+  .btn-primary { background: var(--primary); color: white; width: 100%; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-logout { background: transparent; color: var(--muted); border: none; cursor: pointer; font-size: 14px; text-decoration: underline; }
 
-  /* Аккаунты */
-  .my-accounts { max-width: 1200px; margin: 20px auto 0; padding: 20px 40px; background: #fff; border-radius: 12px; border: 1px solid #eaeaea; display: none; }
-  .account-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #eaeaea; }
-  .account-item:last-child { border-bottom: none; }
+  /* Мои счета */
+  .my-accounts { background: var(--card); border-radius: 16px; padding: 30px; border: 1px solid #eaeaea; display: none; }
+  .my-accounts h3 { margin-bottom: 20px; color: var(--primary); }
+  .account-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
+  .account-row:last-child { border-bottom: none; }
+  .acc-info b { display: block; font-size: 16px; margin-bottom: 4px; }
+  .acc-info span { font-size: 12px; color: var(--muted); }
+  .btn-sm { padding: 8px 16px; font-size: 12px; }
+
+  /* Модалка */
+  .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+  .modal.active { display: flex; }
+  .modal-content { background: #1c1c1e; padding: 30px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; }
+  .modal-content h2 { color: white; margin-bottom: 20px; }
+  .modal-content input { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: none; background: #e5e5ea; font-size: 16px; outline: none; }
+  .modal-content button { width: 100%; padding: 15px; border-radius: 10px; border: none; background: white; font-weight: bold; font-size: 16px; cursor: pointer; }
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="logo">⚡ FundingPips</div>
-  <div class="header-actions">
-    <!-- Кнопка Войти -->
-    <button class="btn btn-outline" id="btn-login" onclick="openAppleModal()">Sign In</button>
-    
-    <!-- Профиль -->
-    <div class="user-profile" id="user-profile">
-      <span> <span id="user-name">User</span></span>
-      <button class="btn btn-outline" onclick="logout()" style="padding: 5px 10px; font-size: 12px;">Выйти</button>
-    </div>
-    
-    <button class="btn btn-primary" onclick="goToTerminal()">Перейти в Терминал →</button>
+  <div class="header-right">
+    <div class="wallet-balance" id="wallet-display">Баланс: 0 ₽</div>
+    <button class="btn-logout" id="btn-logout" onclick="logout()" style="display:none;">Выйти</button>
+    <button class="btn btn-primary" id="btn-login" onclick="openModal()" style="width: auto;">Войти</button>
   </div>
 </div>
 
 <div class="hero">
-  <div class="hero-text">
-    <h1>Turn your trading skills into income</h1>
-    <p>Join over 3,000,000 traders. Trade in a fully simulated environment.</p>
-  </div>
-  <div class="hero-image">
-    <div class="bottle-mockup"></div>
-  </div>
+  <h1>Turn your trading skills into income</h1>
+  <p>Выберите испытание и начните торговать в симуляторе.</p>
 </div>
 
-<div class="pricing" id="pricing-section">
-  <div class="pricing-header">
-    <h2>Choose your Challenge</h2>
-    <p>Все счета сохраняются в вашем браузере</p>
-  </div>
-  
+<div class="container">
   <div class="cards-grid">
+    <!-- 10k -->
     <div class="card">
-      <h3>$10,000 Account</h3>
-      <div class="price">$99</div>
-      <ul><li>Profit Target: 8%</li><li>Max Loss: 10%</li></ul>
-      <button class="btn btn-primary" onclick="buyAccount(10000)">Купить $10k</button>
+      <h3>Evaluation Account</h3>
+      <div class="price">10 000 ₽</div>
+      <ul>
+        <li>Размер счета: $10,000</li>
+        <li>Цель по прибыли: 8%</li>
+        <li>Макс. просадка: 10%</li>
+      </ul>
+      <button class="btn btn-primary" onclick="buyAccount(10000, 10000)">Купить $10k</button>
     </div>
-    <div class="card" style="border: 2px solid var(--primary);">
-      <h3>$50,000 Account</h3>
-      <div class="price">$299</div>
-      <ul><li>Profit Target: 8%</li><li>Max Loss: 10%</li></ul>
-      <button class="btn btn-primary" onclick="buyAccount(50000)">Купить $50k</button>
+    <!-- 50k -->
+    <div class="card popular">
+      <h3>Evaluation Account</h3>
+      <div class="price">25 000 ₽</div>
+      <ul>
+        <li>Размер счета: $50,000</li>
+        <li>Цель по прибыли: 8%</li>
+        <li>Макс. просадка: 10%</li>
+      </ul>
+      <button class="btn btn-primary" onclick="buyAccount(25000, 50000)">Купить $50k</button>
     </div>
+    <!-- 100k -->
     <div class="card">
-      <h3>$100,000 Account</h3>
-      <div class="price">$499</div>
-      <ul><li>Profit Target: 8%</li><li>Max Loss: 10%</li></ul>
-      <button class="btn btn-primary" onclick="buyAccount(100000)">Купить $100k</button>
+      <h3>Evaluation Account</h3>
+      <div class="price">50 000 ₽</div>
+      <ul>
+        <li>Размер счета: $100,000</li>
+        <li>Цель по прибыли: 8%</li>
+        <li>Макс. просадка: 10%</li>
+      </ul>
+      <button class="btn btn-primary" onclick="buyAccount(50000, 100000)">Купить $100k</button>
     </div>
   </div>
 
-  <div class="my-accounts" id="my-accounts-list">
-    <h3 style="margin-bottom: 15px; color: var(--primary);">Ваши счета:</h3>
-    <div id="accounts-container"></div>
+  <div class="my-accounts" id="my-accounts-section">
+    <h3>Ваши активные счета</h3>
+    <div id="accounts-list"></div>
   </div>
 </div>
 
 <!-- Модалка входа -->
-<div class="modal-overlay" id="apple-modal">
-  <div class="apple-modal">
-    <h2>Apple ID</h2>
-    <input type="text" id="apple-email" class="apple-input" placeholder="Логин (любой)">
-    <input type="password" id="apple-pass" class="apple-input" placeholder="Пароль (любой)">
-    <button class="apple-btn" onclick="login()">Войти</button>
-    <a class="apple-link" onclick="alert('Регистрация не нужна, просто введите любой логин')">Нет аккаунта? Создать</a>
+<div class="modal" id="login-modal">
+  <div class="modal-content">
+    <h2>Вход в систему</h2>
+    <input type="text" id="login-name" placeholder="Ваше имя (любое)">
+    <button onclick="login()">Продолжить</button>
   </div>
 </div>
 
 <script>
-  // --- 1. Логика входа ---
-  function openAppleModal() {
-    document.getElementById('apple-modal').classList.add('active');
+  // --- 1. Инициализация и баланс ---
+  // Если баланса нет, выдаем стартовые 13 736 ₽ (как на твоем скрине)
+  if (!localStorage.getItem('wallet_balance')) {
+    localStorage.setItem('wallet_balance', '13736');
   }
 
-  function login() {
-    const email = document.getElementById('apple-email').value.trim();
-    const pass = document.getElementById('apple-pass').value.trim();
-
-    if (!email || !pass) {
-      alert("Введите логин и пароль (любые)!");
-      return;
-    }
-
-    // Сохраняем сессию в браузер
-    const user = { name: email, loginTime: Date.now() };
-    localStorage.setItem('user_session', JSON.stringify(user));
+  function updateHeader() {
+    const session = JSON.parse(localStorage.getItem('user_session'));
+    const balance = parseInt(localStorage.getItem('wallet_balance'));
     
-    document.getElementById('apple-modal').classList.remove('active');
-    checkSession(); // Обновляем интерфейс
+    document.getElementById('wallet-display').innerText = `Баланс: ${balance.toLocaleString('ru-RU')} ₽`;
+
+    if (session) {
+      document.getElementById('btn-login').style.display = 'none';
+      document.getElementById('btn-logout').style.display = 'block';
+      document.getElementById('my-accounts-section').style.display = 'block';
+      loadAccounts();
+    } else {
+      document.getElementById('btn-login').style.display = 'block';
+      document.getElementById('btn-logout').style.display = 'none';
+      document.getElementById('my-accounts-section').style.display = 'none';
+    }
+  }
+
+  // --- 2. Логика входа ---
+  function openModal() { document.getElementById('login-modal').classList.add('active'); }
+  
+  function login() {
+    const name = document.getElementById('login-name').value.trim() || "Trader";
+    localStorage.setItem('user_session', JSON.stringify({ name }));
+    document.getElementById('login-modal').classList.remove('active');
+    updateHeader();
   }
 
   function logout() {
     localStorage.removeItem('user_session');
-    checkSession(); // Обновляем интерфейс
+    updateHeader();
   }
 
-  // Проверка: залогинен ли пользователь
-  function checkSession() {
+  // --- 3. Логика покупки ---
+  function buyAccount(priceRub, accountSize) {
     const session = localStorage.getItem('user_session');
-    const btnLogin = document.getElementById('btn-login');
-    const userProfile = document.getElementById('user-profile');
-    const accountsList = document.getElementById('my-accounts-list');
+    if (!session) { alert("Сначала войдите в систему!"); openModal(); return; }
 
-    if (session) {
-      const user = JSON.parse(session);
-      btnLogin.style.display = 'none';
-      userProfile.style.display = 'flex';
-      document.getElementById('user-name').innerText = user.name;
-      accountsList.style.display = 'block';
-      loadAccounts();
-    } else {
-      btnLogin.style.display = 'block';
-      userProfile.style.display = 'none';
-      accountsList.style.display = 'none';
-    }
-  }
-
-  // --- 2. Логика счетов ---
-  function loadAccounts() {
-    const accounts = JSON.parse(localStorage.getItem('my_prop_accounts')) || [];
-    const container = document.getElementById('accounts-container');
+    let balance = parseInt(localStorage.getItem('wallet_balance'));
     
-    if (accounts.length === 0) {
-      container.innerHTML = '<p style="color: #666;">У вас пока нет купленных счетов.</p>';
+    if (balance < priceRub) {
+      alert(`Недостаточно средств! На вашем балансе ${balance} ₽, а счет стоит ${priceRub} ₽.`);
       return;
     }
 
-    container.innerHTML = '';
-    accounts.forEach((acc) => {
-      container.innerHTML += `
-        <div class="account-item">
-          <div>
-            <strong>Счет на $${acc.size.toLocaleString()}</strong><br>
-            <span style="font-size: 12px; color: #666;">Баланс: $${acc.currentBalance.toFixed(2)}</span>
+    // Списываем деньги
+    balance -= priceRub;
+    localStorage.setItem('wallet_balance', balance);
+
+    // Создаем счет
+    let accounts = JSON.parse(localStorage.getItem('my_prop_accounts')) || [];
+    accounts.push({
+      id: 'acc_' + Date.now(),
+      size: accountSize,
+      initialBalance: accountSize,
+      currentBalance: accountSize
+    });
+    localStorage.setItem('my_prop_accounts', JSON.stringify(accounts));
+
+    alert(`Успешно! Вы купили счет на $${accountSize.toLocaleString()}. Остаток на карте: ${balance} ₽`);
+    
+    updateHeader(); // Обновляем баланс в шапке и список
+  }
+
+  // --- 4. Список счетов ---
+  function loadAccounts() {
+    const accounts = JSON.parse(localStorage.getItem('my_prop_accounts')) || [];
+    const list = document.getElementById('accounts-list');
+    
+    if (accounts.length === 0) {
+      list.innerHTML = '<p style="color: var(--muted);">У вас пока нет купленных счетов.</p>';
+      return;
+    }
+
+    list.innerHTML = '';
+    accounts.forEach(acc => {
+      list.innerHTML += `
+        <div class="account-row">
+          <div class="acc-info">
+            <b>Счет на $${acc.size.toLocaleString()}</b>
+            <span>Текущий баланс: $${acc.currentBalance.toFixed(2)}</span>
           </div>
-          <a href="terminal.html" class="btn btn-primary" style="padding: 5px 15px; font-size: 12px; align-self: center;">Торговать</a>
+          <a href="terminal.html?id=${acc.id}" class="btn btn-primary btn-sm" style="text-decoration:none; width:auto;">Торговать</a>
         </div>
       `;
     });
   }
 
-  function buyAccount(size) {
-    if (!localStorage.getItem('user_session')) {
-      alert("Сначала войдите в аккаунт!");
-      openAppleModal();
-      return;
-    }
-
-    let accounts = JSON.parse(localStorage.getItem('my_prop_accounts')) || [];
-    accounts.push({ id: Date.now(), size: size, initialBalance: size, currentBalance: size });
-    localStorage.setItem('my_prop_accounts', JSON.stringify(accounts));
-    alert(`Вы успешно купили счет на $${size.toLocaleString()}!`);
-    loadAccounts();
-  }
-
-  // --- 3. Переход в терминал ---
-  function goToTerminal() {
-    if (localStorage.getItem('user_session')) {
-      window.location.href = 'terminal.html';
-    } else {
-      alert("Сначала войдите в систему!");
-      openAppleModal();
-    }
-  }
-
-  // Запуск при загрузке страницы
-  checkSession();
+  // Запуск
+  updateHeader();
 </script>
 </body>
 </html>
