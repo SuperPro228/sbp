@@ -22,23 +22,42 @@
         html, body { height: 100%; overflow: hidden; background: var(--tv-bg); color: var(--tv-text); }
         
         .app { 
-            width: 100%; max-width: 500px; height: 100%; margin: 0 auto;
+            width: 100%; height: 100%; margin: 0 auto;
             display: flex; flex-direction: column; position: relative; overflow: hidden;
         }
 
-        /* --- АНИМАЦИИ --- */
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes toastIn { 0% { transform: translate(-50%, -20px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
-        @keyframes toastOut { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
+        /* --- АДАПТИВНОСТЬ ПОД ПК --- */
+        @media (min-width: 768px) {
+            .app {
+                flex-direction: row;
+                max-width: 1200px;
+                border-left: 1px solid var(--tv-border);
+                border-right: 1px solid var(--tv-border);
+            }
+            .left-panel {
+                flex: 2;
+                display: flex;
+                flex-direction: column;
+                border-right: 1px solid var(--tv-border);
+            }
+            .right-panel {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                background: var(--tv-bg);
+                min-width: 350px;
+                max-width: 400px;
+            }
+        }
 
         /* --- ВЕРХНЯЯ ПАНЕЛЬ --- */
         .hdr { 
             display: flex; justify-content: space-between; align-items: center;
             padding: 12px 16px; background: var(--tv-bg); border-bottom: 1px solid var(--tv-border);
-            z-index: 10; animation: slideDown 0.3s ease-out;
+            z-index: 10;
         }
         .back-btn { color: var(--tv-text-muted); text-decoration: none; font-size: 14px; font-weight: 500; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
         .balance-box { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
         .wallet-btn { 
             background: var(--tv-panel); border: 1px solid var(--tv-border); color: var(--tv-text);
@@ -55,7 +74,10 @@
         .panel { 
             padding: 16px; display: flex; flex-direction: column; gap: 12px; 
             background: var(--tv-bg); flex-shrink: 0; border-top: 1px solid var(--tv-border);
-            animation: slideUp 0.4s ease-out; z-index: 5;
+            z-index: 5;
+        }
+        @media (min-width: 768px) {
+            .panel { border-top: none; padding: 24px; }
         }
 
         .toggle-wrapper { position: relative; display: flex; background: var(--tv-panel); border-radius: 4px; padding: 3px; border: 1px solid var(--tv-border); }
@@ -73,7 +95,7 @@
 
         .pcts { display: flex; gap: 6px; }
         .pct-btn { flex: 1; background: var(--tv-panel); border: 1px solid var(--tv-border); color: var(--tv-text-muted); padding: 8px 0; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .pct-btn:active { transform: scale(0.96); }
+        .pct-btn:hover { background: #2a2e39; }
 
         .exec-btn { width: 100%; padding: 16px; border: none; border-radius: 4px; font-size: 16px; font-weight: 700; cursor: pointer; color: #fff; transition: all 0.2s; }
         .exec-btn.buy { background: var(--tv-green); }
@@ -83,7 +105,7 @@
 
         /* --- МОДАЛЬНОЕ ОКНО КОШЕЛЬКА --- */
         .wallet-modal {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
             z-index: 100; display: none; align-items: flex-end;
             opacity: 0; transition: opacity 0.3s;
@@ -95,6 +117,9 @@
             padding: 20px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             max-height: 70%; display: flex; flex-direction: column;
         }
+        @media (min-width: 768px) {
+            .wallet-content { max-width: 500px; margin: 0 auto; border-radius: 20px; margin-bottom: 50px; max-height: 80%; }
+        }
         .wallet-modal.show .wallet-content { transform: translateY(0); }
 
         .wallet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -103,25 +128,22 @@
 
         .coins-list { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; }
         
-        .coin-item {
-            display: flex; justify-content: space-between; align-items: center;
-            background: var(--tv-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--tv-border);
-        }
+        .coin-item { display: flex; justify-content: space-between; align-items: center; background: var(--tv-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--tv-border); }
         .coin-info { display: flex; align-items: center; gap: 12px; }
         .coin-icon { width: 36px; height: 36px; background: #2a2e39; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; color: var(--tv-blue); }
         .coin-symbol { font-weight: 700; font-size: 15px; }
         .coin-amount { font-size: 12px; color: var(--tv-text-muted); }
-        
         .coin-value { text-align: right; }
         .coin-rub { font-weight: 700; font-size: 15px; color: var(--tv-green); }
         .coin-usd { font-size: 12px; color: var(--tv-text-muted); }
-
         .empty-wallet { text-align: center; color: var(--tv-text-muted); padding: 30px 0; font-size: 14px; }
 
         /* Тост */
         #toast { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: var(--tv-panel); color: var(--tv-text); padding: 12px 20px; border-radius: 4px; font-size: 14px; border-left: 3px solid var(--tv-blue); opacity: 0; pointer-events: none; z-index: 200; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
         .toast-show { display: block !important; animation: toastIn 0.3s forwards; }
         .toast-hide { animation: toastOut 0.3s forwards; }
+        @keyframes toastIn { 0% { transform: translate(-50%, -20px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
+        @keyframes toastOut { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -141,44 +163,47 @@
         </div>
     </div>
 
-    <!-- Шапка -->
-    <div class="hdr">
-        <a href="apple_pay.html" class="back-btn" onclick="playSound('click')">‹ Назад</a>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <div class="balance-box"><span id="rub-balance">0</span> ₽</div>
-            <button class="wallet-btn" onclick="openWallet()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
-                Кошелек
-            </button>
+    <!-- ЛЕВАЯ ПАНЕЛЬ (График) -->
+    <div class="left-panel">
+        <div class="hdr">
+            <a href="apple_pay.html" class="back-btn" onclick="playSound('click')">‹ Назад в Wallet</a>
+            <div class="user-info">
+                <div class="balance-box"><span id="rub-balance">0</span> ₽</div>
+                <button class="wallet-btn" onclick="openWallet()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                    Мои монеты
+                </button>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div id="tradingview_widget"></div>
         </div>
     </div>
 
-    <!-- График -->
-    <div class="chart-container">
-        <div id="tradingview_widget"></div>
-    </div>
+    <!-- ПРАВАЯ ПАНЕЛЬ (Торговля) -->
+    <div class="right-panel">
+        <div class="panel">
+            <div class="toggle-wrapper">
+                <div class="toggle-slider" id="toggle-slider"></div>
+                <div class="t-btn active-buy" id="t-buy" onclick="setMode('buy')">Покупка</div>
+                <div class="t-btn" id="t-sell" onclick="setMode('sell')">Продажа</div>
+            </div>
 
-    <!-- Панель торговли -->
-    <div class="panel">
-        <div class="toggle-wrapper">
-            <div class="toggle-slider" id="toggle-slider"></div>
-            <div class="t-btn active-buy" id="t-buy" onclick="setMode('buy')">Покупка</div>
-            <div class="t-btn" id="t-sell" onclick="setMode('sell')">Продажа</div>
+            <div class="input-box">
+                <input type="number" id="amt" placeholder="0.00" step="100">
+                <span class="currency">₽</span>
+            </div>
+
+            <div class="pcts">
+                <button class="pct-btn" onclick="setPct(25)">25%</button>
+                <button class="pct-btn" onclick="setPct(50)">50%</button>
+                <button class="pct-btn" onclick="setPct(75)">75%</button>
+                <button class="pct-btn" onclick="setPct(100)">Макс</button>
+            </div>
+
+            <button class="exec-btn buy" id="exec" onclick="trade()">Купить по рынку</button>
         </div>
-
-        <div class="input-box">
-            <input type="number" id="amt" placeholder="0.00" step="100">
-            <span class="currency">₽</span>
-        </div>
-
-        <div class="pcts">
-            <button class="pct-btn" onclick="setPct(25)">25%</button>
-            <button class="pct-btn" onclick="setPct(50)">50%</button>
-            <button class="pct-btn" onclick="setPct(75)">75%</button>
-            <button class="pct-btn" onclick="setPct(100)">Макс</button>
-        </div>
-
-        <button class="exec-btn buy" id="exec" onclick="trade()">Купить по рынку</button>
     </div>
 </div>
 
@@ -196,11 +221,9 @@
     let currentCoin = "SOL"; // По умолчанию Solana
     let coinPriceInUsd = 145.50; // Примерная цена для расчета в USDT
 
-    // Слушаем баланс
     db.ref('users/' + user + '/balance').on('value', snap => {
         currentBalance = snap.val() || 0;
-        const el = document.getElementById('rub-balance');
-        el.innerText = currentBalance.toLocaleString();
+        document.getElementById('rub-balance').innerText = currentBalance.toLocaleString();
     });
 
     // Слушаем портфель (купленные монеты)
@@ -227,7 +250,6 @@
     script.onload = initTradingView;
     document.head.appendChild(script);
 
-    // Переключение режима
     function setMode(m) {
         playSound('click');
         currentMode = m;
@@ -259,7 +281,6 @@
         setTimeout(() => { t.classList.remove('toast-show'); t.classList.add('toast-hide'); }, 2500);
     }
 
-    // --- ЛОГИКА ТОРГОВЛИ С ПОРТФЕЛЕМ ---
     async function trade() {
         const btn = document.getElementById('exec');
         const amt = parseFloat(document.getElementById('amt').value);
@@ -278,12 +299,10 @@
             currentBalance -= amt;
             await userRef.update({ balance: currentBalance });
 
-            // Добавляем монету в портфель
             const snap = await portfolioRef.once('value');
             const existing = snap.val() || { amountRub: 0, amountCoin: 0 };
             
-            // Переводим рубли в "монеты" (для симуляции)
-            const coinsBought = amt / (coinPriceInUsd * 90); // 90 - примерный курс доллара
+            const coinsBought = amt / (coinPriceInUsd * 90); 
             const newAmountRub = existing.amountRub + amt;
             const newAmountCoin = existing.amountCoin + coinsBought;
 
@@ -293,7 +312,6 @@
             showToast(`Куплено ${coinsBought.toFixed(4)} ${currentCoin}`, 'success');
 
         } else {
-            // Продажа
             const snap = await portfolioRef.once('value');
             const existing = snap.val();
             
@@ -301,7 +319,6 @@
                 playSound('error'); showToast('У вас нет этой монеты', 'error'); btn.disabled = false; return;
             }
 
-            // Продаем часть или всё
             const sellRatio = amt / existing.amountRub;
             if (sellRatio > 1) {
                 playSound('error'); showToast('Недостаточно монет', 'error'); btn.disabled = false; return;
@@ -315,7 +332,7 @@
             const newAmountCoin = existing.amountCoin - (existing.amountCoin * sellRatio);
 
             if (newAmountRub < 1) {
-                await portfolioRef.remove(); // Если продали всё, удаляем
+                await portfolioRef.remove();
             } else {
                 await portfolioRef.update({ amountRub: newAmountRub, amountCoin: newAmountCoin });
             }
