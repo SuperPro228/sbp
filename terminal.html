@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Axiom Trading Terminal</title>
+<title>Trading Terminal</title>
 <style>
   :root { --bg: #0a0a0a; --panel: #1c1c1e; --text: #ffffff; --muted: #8e8e93; --green: #30d158; --red: #ff453a; --blue: #0a84ff; }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
   .app { width: 100%; max-width: 500px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
   
-  /* Шапка */
+  /* Шапка терминала */
   .term-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .back-btn { background: none; border: 1px solid #333; color: var(--blue); padding: 8px 15px; border-radius: 8px; font-size: 14px; cursor: pointer; text-decoration: none; }
   
@@ -44,7 +44,7 @@
 
 <div class="app">
   <div class="term-header">
-    <a href="prop.html" class="back-btn">← Назад</a>
+    <a href="prop.html" class="back-btn">← Назад в магазин</a>
     <div style="font-weight:bold;">Axiom Terminal</div>
   </div>
 
@@ -85,24 +85,14 @@
   
   // Загрузка при старте
   window.onload = () => {
-    // 1. Проверка авторизации (сессии)
-    const session = localStorage.getItem('user_session');
-    if (!session) {
-      alert("Вы не вошли в аккаунт! Перенаправление...");
-      window.location.href = 'prop.html';
-      return;
-    }
-
-    // 2. Загрузка купленных счетов
     accounts = JSON.parse(localStorage.getItem('my_prop_accounts')) || [];
     
     if (accounts.length === 0) {
-      alert("У вас нет купленных счетов! Сначала купите счет.");
+      alert("У вас нет купленных счетов! Сначала купите счет в магазине.");
       window.location.href = 'prop.html';
       return;
     }
 
-    // 3. Заполнение выпадающего списка
     const dropdown = document.getElementById('account-dropdown');
     dropdown.innerHTML = '';
     accounts.forEach((acc, index) => {
@@ -112,17 +102,16 @@
       dropdown.appendChild(option);
     });
 
-    // 4. Запуск движка графика
     updateUI();
     resizeCanvas();
-    setInterval(updatePrice, 1000); // Движение цены каждую секунду
+    setInterval(updatePrice, 1000);
   };
 
-  // Переключение между счетами
+  // Переключение счета
   window.switchAccount = () => {
     const dropdown = document.getElementById('account-dropdown');
     activeAccountIndex = parseInt(dropdown.value);
-    activePosition = null; // Сбрасываем сделку при смене счета
+    activePosition = null; 
     currentPrice = 100.00;
     priceHistory = Array(40).fill(100.00);
     
@@ -131,7 +120,7 @@
     showToast(`Переключено на счет $${accounts[activeAccountIndex].size.toLocaleString()}`);
   };
 
-  // Обновление баланса и PnL на экране
+  // Обновление UI
   function updateUI() {
     const acc = accounts[activeAccountIndex];
     if (!acc) return;
@@ -144,26 +133,25 @@
     pnlEl.style.color = pnlPercent > 0 ? '#30d158' : pnlPercent < 0 ? '#ff453a' : '#8e8e93';
   }
 
-  // Логика торговли
+  // Торговля
   window.trade = (type) => {
     const acc = accounts[activeAccountIndex];
 
     if (activePosition) {
-      // Закрытие позиции
+      // Закрытие
       let pnl = activePosition.type === 'buy' 
         ? (currentPrice - activePosition.entry) * activePosition.size 
         : (activePosition.entry - currentPrice) * activePosition.size;
       
       acc.currentBalance += pnl;
-      acc.currentBalance -= Math.abs(pnl) * 0.05; // Комиссия 5%
+      acc.currentBalance -= Math.abs(pnl) * 0.05; 
       
-      // Сохраняем новый баланс в память
       localStorage.setItem('my_prop_accounts', JSON.stringify(accounts));
       
       showToast(`Сделка закрыта. PnL: $${pnl.toFixed(2)}`);
       activePosition = null;
     } else {
-      // Открытие позиции (риск 1% от счета)
+      // Открытие
       const riskAmount = acc.initialBalance * 0.01; 
       activePosition = { type, entry: currentPrice, size: riskAmount };
       showToast(`Открыта позиция ${type.toUpperCase()}`);
@@ -173,12 +161,11 @@
     drawChart();
   };
 
-  // --- Движок графика ---
+  // График и цена
   const cv = document.getElementById('cv');
   const ctx = cv.getContext('2d');
 
   function resizeCanvas() {
-    if(!cv.parentElement) return;
     cv.width = cv.parentElement.clientWidth;
     cv.height = cv.parentElement.clientHeight;
     drawChart();
@@ -191,7 +178,7 @@
     priceHistory.push(currentPrice);
     if (priceHistory.length > 40) priceHistory.shift();
 
-    if (activePosition) updateUI(); // Обновляем PnL в реальном времени
+    if (activePosition) updateUI(); 
     drawChart();
   }
 
@@ -212,7 +199,6 @@
     });
     ctx.stroke();
 
-    // Заливка под графиком
     ctx.lineTo(cv.width, cv.height); ctx.lineTo(0, cv.height); ctx.closePath();
     const g = ctx.createLinearGradient(0, 0, 0, cv.height);
     g.addColorStop(0, activePosition ? 'rgba(48,209,88,0.2)' : 'rgba(10,132,255,0.2)');
