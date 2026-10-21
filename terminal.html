@@ -5,43 +5,45 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Axiom Terminal</title>
 <style>
+  /* Возвращаем темную тему как было */
   :root { --bg: #0a0a0a; --panel: #1c1c1e; --text: #ffffff; --muted: #8e8e93; --green: #30d158; --red: #ff453a; --blue: #0a84ff; }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
-  .app { width: 100%; max-width: 600px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+  .app { width: 100%; max-width: 700px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
   
-  /* Шапка */
-  .term-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  /* Шапка терминала */
+  .term-header { display: flex; justify-content: space-between; align-items: center; }
   .back-btn { background: none; border: 1px solid #333; color: var(--blue); padding: 8px 15px; border-radius: 8px; font-size: 14px; cursor: pointer; text-decoration: none; }
-  .term-title { font-weight: bold; }
   
-  /* Выбор пары */
-  .pair-selector { background: var(--panel); padding: 15px; border-radius: 12px; display: flex; gap: 10px; align-items: center; }
-  .pair-selector select { background: #2c2c2e; color: white; border: 1px solid #444; padding: 10px; border-radius: 8px; font-size: 16px; outline: none; flex: 1; }
+  /* Панель выбора монеты */
+  .top-panel { display: flex; gap: 15px; background: var(--panel); padding: 15px; border-radius: 12px; align-items: center; }
+  .top-panel select { background: #2c2c2e; color: white; border: 1px solid #444; padding: 10px 15px; border-radius: 8px; font-size: 16px; font-weight: bold; outline: none; cursor: pointer; }
+  .top-panel .info { display: flex; flex-direction: column; }
+  .top-panel .info span { font-size: 12px; color: var(--muted); }
+  .top-panel .info b { font-size: 18px; }
 
   /* График */
-  .chart-box { height: 300px; background: var(--panel); border-radius: 12px; position: relative; overflow: hidden; }
+  .chart-box { height: 350px; background: var(--panel); border-radius: 12px; position: relative; overflow: hidden; }
   canvas { width: 100%; height: 100%; display: block; }
-  .current-price { position: absolute; top: 15px; left: 15px; font-size: 24px; font-weight: bold; }
+  .current-price { position: absolute; top: 20px; left: 20px; font-size: 32px; font-weight: bold; z-index: 10; }
   
   /* Статистика */
-  .term-stats { display: flex; justify-content: space-between; background: var(--panel); padding: 15px; border-radius: 12px; }
+  .term-stats { display: flex; justify-content: space-between; background: var(--panel); padding: 15px 20px; border-radius: 12px; }
   .term-stat { display: flex; flex-direction: column; gap: 5px; }
   .term-stat-lbl { font-size: 12px; color: var(--muted); }
-  .term-stat-val { font-size: 18px; font-weight: bold; }
+  .term-stat-val { font-size: 20px; font-weight: bold; }
   
-  /* Ввод суммы */
-  .amount-input { display: flex; background: var(--panel); padding: 15px; border-radius: 12px; align-items: center; gap: 10px; }
-  .amount-input input { background: none; border: none; color: white; font-size: 20px; font-weight: bold; width: 100%; outline: none; }
-  
-  /* Кнопки */
-  .trade-panel { display: flex; gap: 10px; }
-  .trade-btn { flex: 1; padding: 15px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; }
+  /* Панель управления сделкой */
+  .trade-panel { background: var(--panel); padding: 20px; border-radius: 12px; display: flex; gap: 15px; align-items: center; }
+  .trade-panel input { flex: 1; background: #2c2c2e; border: 1px solid #444; color: white; padding: 15px; border-radius: 10px; font-size: 18px; font-weight: bold; outline: none; }
+  .btn-trade { padding: 15px 30px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; transition: 0.2s; }
   .btn-buy { background: var(--green); }
   .btn-sell { background: var(--red); }
+  .btn-buy:hover { background: #28b84c; }
+  .btn-sell:hover { background: #e03e33; }
 
   /* Уведомления */
-  #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 12px 24px; border-radius: 20px; font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none; text-align: center; }
+  #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 15px 30px; border-radius: 20px; font-size: 16px; font-weight: bold; opacity: 0; transition: 0.3s; pointer-events: none; text-align: center; }
 </style>
 </head>
 <body>
@@ -49,142 +51,145 @@
 
 <div class="app">
   <div class="term-header">
-    <a href="prop.html" class="back-btn">← Назад</a>
-    <div class="term-title" id="acc-title">Загрузка...</div>
+    <a href="prop.html" class="back-btn">← Назад в магазин</a>
+    <div style="font-weight:bold;" id="acc-title">Загрузка...</div>
   </div>
 
-  <div class="pair-selector">
+  <!-- Выбор пары (как в TradingView) -->
+  <div class="top-panel">
     <select id="pair-select" onchange="changePair()">
-      <option value="SOL/USDT">SOL/USDT</option>
-      <option value="BTC/USDT">BTC/USDT</option>
-      <option value="ETH/USDT">ETH/USDT</option>
-      <option value="GAZP">ГАЗПРОМ (Акция)</option>
+      <option value="SOLUSDT">SOL/USDT</option>
+      <option value="BTCUSDT">BTC/USDT</option>
+      <option value="ETHUSDT">ETH/USDT</option>
+      <option value="GAZP">GAZP (Российские акции)</option>
     </select>
+    <div class="info">
+      <span>Текущая цена</span>
+      <b id="price-info">0.00</b>
+    </div>
   </div>
 
+  <!-- График -->
   <div class="chart-box">
-    <div class="current-price" id="price-display">$0.00</div>
+    <div class="current-price" id="price-display" style="color: var(--blue);">0.00</div>
     <canvas id="cv"></canvas>
   </div>
 
+  <!-- Статистика -->
   <div class="term-stats">
     <div class="term-stat">
       <span class="term-stat-lbl">Баланс счета</span>
       <span class="term-stat-val" id="acc-balance">$0</span>
     </div>
     <div class="term-stat">
-      <span class="term-stat-lbl">PnL</span>
+      <span class="term-stat-lbl">PnL (Плавающий)</span>
       <span class="term-stat-val" id="acc-pnl" style="color:var(--muted);">0%</span>
     </div>
   </div>
 
-  <div class="amount-input">
-    <input type="number" id="trade-amount" placeholder="Сумма сделки ($)" value="1000">
-  </div>
-
+  <!-- Панель ордера -->
   <div class="trade-panel">
-    <button class="trade-btn btn-buy" onclick="openTrade('buy')">BUY / LONG</button>
-    <button class="trade-btn btn-sell" onclick="openTrade('sell')">SELL / SHORT</button>
+    <input type="number" id="trade-amount" placeholder="Сумма в $" value="100">
+    <button class="btn-trade btn-buy" onclick="openTrade('buy')">BUY / LONG</button>
+    <button class="btn-trade btn-sell" onclick="openTrade('sell')">SELL / SHORT</button>
   </div>
 </div>
 
 <script>
-  // --- 1. Настройки и инициализация ---
+  // --- 1. Состояние ---
   let accounts = [];
   let currentAccount = null;
   let activePosition = null;
   let currentPrice = 0;
   let priceHistory = [];
   
-  // Настройки для разных пар (чтобы график выглядел реалистично)
+  // Настройки для монет (стартовая цена и волатильность)
   const pairsConfig = {
-    'SOL/USDT': { basePrice: 150.00, volatility: 2 },
-    'BTC/USDT': { basePrice: 65000.00, volatility: 150 },
-    'ETH/USDT': { basePrice: 3500.00, volatility: 15 },
-    'GAZP': { basePrice: 111.85, volatility: 0.5 } // Как на твоем скрине
+    'SOLUSDT': { base: 150.00, vol: 2.5, prefix: '$', dec: 2 },
+    'BTCUSDT': { base: 65000.00, vol: 150, prefix: '$', dec: 0 },
+    'ETHUSDT': { base: 3500.00, vol: 15, prefix: '$', dec: 2 },
+    'GAZP': { base: 111.85, vol: 0.5, prefix: '', dec: 2 } // Как на твоем скрине
   };
-  let activePair = 'SOL/USDT';
+  let activePair = 'SOLUSDT';
 
   window.onload = () => {
-    // Получаем ID счета из URL (например, terminal.html?id=acc_123)
+    // Получаем ID счета из ссылки
     const urlParams = new URLSearchParams(window.location.search);
     const accountId = urlParams.get('id');
 
-    if (!accountId) {
-      alert("Ошибка: Не выбран счет!");
-      window.location.href = 'prop.html';
-      return;
-    }
+    if (!accountId) { alert("Ошибка: Не выбран счет!"); window.location.href = 'prop.html'; return; }
 
     accounts = JSON.parse(localStorage.getItem('my_prop_accounts')) || [];
     currentAccount = accounts.find(a => a.id === accountId);
 
-    if (!currentAccount) {
-      alert("Счет не найден!");
-      window.location.href = 'prop.html';
-      return;
-    }
+    if (!currentAccount) { alert("Счет не найден!"); window.location.href = 'prop.html'; return; }
 
-    // Настраиваем график под выбранную пару
-    resetChart(activePair);
-    
-    // Обновляем заголовок
     document.getElementById('acc-title').innerText = `Счет: $${currentAccount.size.toLocaleString()}`;
     
-    // Запускаем движок
+    // Инициализируем график
+    resetChart(activePair);
+    
     updateUI();
     resizeCanvas();
     setInterval(updatePrice, 1000);
   };
 
-  // --- 2. Смена монеты ---
+  // --- 2. Логика смены монеты ---
   function changePair() {
-    activePair = document.getElementById('pair-select').value;
     if (activePosition) {
-      alert("Сначала закройте текущую сделку!");
-      document.getElementById('pair-select').value = activePair; // Возвращаем назад (упрощенно)
+      alert("Сначала закройте текущую сделку (нажмите на ту же кнопку, на которую открывали)!");
+      document.getElementById('pair-select').value = activePair;
       return;
     }
+    activePair = document.getElementById('pair-select').value;
     resetChart(activePair);
-    showToast(`График переключен на ${activePair}`);
+    showToast(`Загружен график ${activePair}`);
   }
 
   function resetChart(pair) {
     const config = pairsConfig[pair];
-    currentPrice = config.basePrice;
+    currentPrice = config.base;
     priceHistory = Array(40).fill(currentPrice);
+    
+    // Обновляем текст цены
+    const priceStr = config.prefix + currentPrice.toFixed(config.dec) + (pair === 'GAZP' ? ' ₽' : '');
+    document.getElementById('price-display').innerText = priceStr;
+    document.getElementById('price-info').innerText = priceStr;
+
     drawChart();
     updateUI();
   }
 
-  // --- 3. Обновление цен и UI ---
+  // --- 3. Генерация цены и обновление UI ---
   function updatePrice() {
     const config = pairsConfig[activePair];
-    // Случайное движение цены с учетом волатильности
-    const change = (Math.random() - 0.5) * config.volatility;
+    
+    // Случайное блуждание
+    const change = (Math.random() - 0.5) * config.vol;
     currentPrice = Math.max(0.1, currentPrice + change);
     
     priceHistory.push(currentPrice);
     if (priceHistory.length > 40) priceHistory.shift();
 
-    // Обновляем плавающий PnL если есть открытая сделка
+    const priceStr = config.prefix + currentPrice.toFixed(config.dec) + (activePair === 'GAZP' ? ' ₽' : '');
+    document.getElementById('price-display').innerText = priceStr;
+    document.getElementById('price-info').innerText = priceStr;
+
     if (activePosition) {
-      updateUI(); 
+      updateUI(); // Обновляем PnL, если сделка открыта
     }
     
     drawChart();
-    document.getElementById('price-display').innerText = 
-      (activePair === 'GAZP' ? '' : '$') + currentPrice.toFixed(activePair === 'GAZP' ? 2 : 4) + (activePair === 'GAZP' ? ' ₽' : '');
   }
 
   function updateUI() {
     if (!currentAccount) return;
 
-    // Если открыта сделка, считаем плавающий PnL
     let displayBalance = currentAccount.currentBalance;
     let pnlPercent = ((displayBalance - currentAccount.initialBalance) / currentAccount.initialBalance) * 100;
 
     if (activePosition) {
+      // Считаем плавающий убыток/прибыль
       const floatingPnl = activePosition.type === 'buy' 
         ? (currentPrice - activePosition.entryPrice) * activePosition.size
         : (activePosition.entryPrice - currentPrice) * activePosition.size;
@@ -197,40 +202,37 @@
     
     const pnlEl = document.getElementById('acc-pnl');
     pnlEl.innerText = (pnlPercent > 0 ? '+' : '') + pnlPercent.toFixed(2) + '%';
-    pnlEl.style.color = pnlPercent > 0 ? '#30d158' : pnlPercent < 0 ? '#ff453a' : '#8e8e93';
+    pnlEl.style.color = pnlPercent > 0 ? 'var(--green)' : pnlPercent < 0 ? 'var(--red)' : 'var(--muted)';
   }
 
-  // --- 4. Логика торговли ---
+  // --- 4. Открытие/Закрытие сделки ---
   function openTrade(type) {
     const amountInput = document.getElementById('trade-amount');
     const investAmount = parseFloat(amountInput.value);
 
-    if (isNaN(investAmount) || investAmount <= 0) {
-      showToast("Введите корректную сумму!");
-      return;
-    }
+    if (isNaN(investAmount) || investAmount <= 0) { showToast("Введите сумму!"); return; }
 
     if (activePosition) {
-      // Если позиция уже есть — ЗАКРЫВАЕМ её
+      // ЗАКРЫТИЕ СДЕЛКИ
       let finalPnl = activePosition.type === 'buy' 
         ? (currentPrice - activePosition.entryPrice) * activePosition.size 
         : (activePosition.entryPrice - currentPrice) * activePosition.size;
       
-      // Учитываем комиссию 0.1% от оборота (упрощенно)
-      const commission = (investAmount * 2) * 0.001; 
-      finalPnl -= commission;
+      // Комиссия 0.05% от суммы сделки
+      finalPnl -= investAmount * 0.0005; 
 
       currentAccount.currentBalance += finalPnl;
       
-      // Сохраняем в базу
+      // Сохраняем обновленный баланс
       const idx = accounts.findIndex(a => a.id === currentAccount.id);
       accounts[idx] = currentAccount;
       localStorage.setItem('my_prop_accounts', JSON.stringify(accounts));
 
-      showToast(`Сделка закрыта. PnL: ${finalPnl > 0 ? '+' : ''}$${finalPnl.toFixed(2)}`);
+      showToast(`Сделка закрыта. Ваш PnL: ${finalPnl > 0 ? '+' : ''}$${finalPnl.toFixed(2)}`);
       activePosition = null;
+      
     } else {
-      // Открываем новую позицию
+      // ОТКРЫТИЕ СДЕЛКИ
       if (investAmount > currentAccount.currentBalance) {
         showToast("Недостаточно средств на счете!");
         return;
@@ -239,19 +241,17 @@
       activePosition = { 
         type: type, 
         entryPrice: currentPrice, 
-        size: investAmount / currentPrice // Кол-во купленных единиц
+        size: investAmount / currentPrice 
       };
       
-      // Меняем цвет кнопок для визуализации
-      document.getElementById('acc-pnl').style.color = 'var(--blue)';
-      showToast(`Открыта позиция ${type === 'buy' ? 'LONG' : 'SHORT'} по ${activePair}`);
+      showToast(`Открыта сделка ${type.toUpperCase()} на $${investAmount}`);
     }
 
     updateUI();
     drawChart();
   }
 
-  // --- 5. Отрисовка графика (Canvas) ---
+  // --- 5. Отрисовка графика ---
   const cv = document.getElementById('cv');
   const ctx = cv.getContext('2d');
 
@@ -271,10 +271,12 @@
     const mn = Math.min(...priceHistory);
     const rng = mx - mn || 1;
     
-    // Цвет линии зависит от открытой позиции
+    // Цвет линии: зеленый/красный если сделка открыта, иначе синий
     ctx.beginPath();
-    ctx.strokeStyle = activePosition ? (activePosition.type === 'buy' ? '#30d158' : '#ff453a') : '#0a84ff';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = activePosition 
+      ? (activePosition.type === 'buy' ? '#30d158' : '#ff453a') 
+      : '#0a84ff';
+    ctx.lineWidth = 3;
 
     priceHistory.forEach((p, i) => {
       const x = (i / (priceHistory.length - 1)) * cv.width;
@@ -283,7 +285,7 @@
     });
     ctx.stroke();
 
-    // Заливка
+    // Градиентная заливка под графиком
     ctx.lineTo(cv.width, cv.height); 
     ctx.lineTo(0, cv.height); 
     ctx.closePath();
@@ -298,7 +300,7 @@
     const t = document.getElementById('toast');
     t.innerText = msg;
     t.style.opacity = '1';
-    setTimeout(() => t.style.opacity = '0', 2000);
+    setTimeout(() => t.style.opacity = '0', 3000);
   }
 </script>
 </body>
