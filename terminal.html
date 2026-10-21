@@ -37,32 +37,39 @@
             .right-panel { width: 320px; display: flex; flex-direction: column; background: var(--tv-panel); flex-shrink: 0; }
         }
 
+        /* --- ВЕРХНЯЯ ПАНЕЛЬ --- */
         .top-toolbar { display: flex; align-items: center; padding: 5px 10px; background: var(--tv-bg); border-bottom: 1px solid var(--tv-border); font-size: 13px; color: var(--tv-text-muted); gap: 15px; overflow-x: auto; white-space: nowrap; }
-        .top-toolbar .ticker { color: var(--tv-blue); font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 5px; }
+        .top-toolbar .ticker { color: var(--tv-blue); font-weight: 700; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
         .top-toolbar .tools { display: flex; gap: 10px; }
-        .top-toolbar .tools span { cursor: pointer; padding: 2px 5px; border-radius: 3px; }
+        .top-toolbar .tools span { cursor: pointer; padding: 2px 6px; border-radius: 3px; }
         .top-toolbar .tools span:hover { background: var(--tv-panel); color: var(--tv-text); }
+        .top-toolbar .tools span.active { color: var(--tv-blue); font-weight: bold; }
 
         .ohlc-bar { display: flex; gap: 12px; padding: 6px 10px; font-size: 12px; background: var(--tv-bg); border-bottom: 1px solid var(--tv-border); color: var(--tv-text-muted); }
         .ohlc-bar span.val { color: var(--tv-text); }
         .ohlc-bar span.up { color: var(--tv-green); }
 
+        /* --- ГРАФИК --- */
         .chart-container { flex: 1 1 auto; position: relative; background: var(--tv-bg); min-height: 300px; }
         #tradingview_widget { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
 
-        /* --- ЛИНИЯ ОРДЕРА --- */
+        /* --- ЛИНИЯ ОРДЕРА (СТРОГО ПО ЦЕНТРУ) --- */
         .order-line {
             position: absolute; left: 0; width: 100%; height: 0;
-            border-top: 1px dashed var(--tv-red); z-index: 15; display: none;
+            border-top: 2px dashed var(--tv-red); z-index: 15; 
+            display: none; /* Скрыта, пока нет сделки */
+            top: 50%; /* Всегда ровно по центру */
             pointer-events: none;
         }
         .order-badge {
-            position: absolute; right: 0; top: -12px; background: rgba(242, 54, 69, 0.15);
-            border: 1px solid var(--tv-red); color: var(--tv-red);
-            font-size: 12px; font-weight: 600; padding: 2px 6px; display: flex; align-items: center; gap: 5px;
+            position: absolute; right: 0; top: -14px; background: rgba(242, 54, 69, 0.9);
+            border: 1px solid var(--tv-red); color: #fff;
+            font-size: 12px; font-weight: 600; padding: 2px 8px; display: flex; align-items: center; gap: 5px;
+            border-radius: 4px;
         }
-        .order-badge .price { color: #fff; background: var(--tv-red); padding: 1px 4px; }
+        .order-badge .price { color: #fff; background: rgba(0,0,0,0.4); padding: 1px 4px; border-radius: 2px; }
 
+        /* --- ПРАВАЯ ПАНЕЛЬ --- */
         .panel-tabs { display: flex; border-bottom: 1px solid var(--tv-border); }
         .p-tab { flex: 1; text-align: center; padding: 10px; font-size: 13px; font-weight: 600; color: var(--tv-text-muted); cursor: pointer; border-bottom: 2px solid transparent; }
         .p-tab.active { color: var(--tv-text); border-bottom-color: var(--tv-blue); }
@@ -100,6 +107,7 @@
         .ob-price.green { color: var(--tv-green); }
         .ob-mid { text-align: center; font-size: 18px; font-weight: 700; padding: 10px 0; color: var(--tv-text); border-top: 1px solid var(--tv-border); border-bottom: 1px solid var(--tv-border); margin: 5px 0; }
 
+        /* --- МОДАЛЬНЫЕ ОКНА --- */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: flex-end; opacity: 0; transition: opacity 0.3s; }
         .modal.show { display: flex; opacity: 1; }
         .modal-content { width: 100%; background: var(--tv-panel); border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 20px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); max-height: 80%; display: flex; flex-direction: column; }
@@ -121,6 +129,8 @@
         .theme-toggle { display: flex; background: var(--tv-bg); border-radius: 6px; border: 1px solid var(--tv-border); overflow: hidden; }
         .theme-btn { padding: 8px 16px; background: none; border: none; color: var(--tv-text-muted); cursor: pointer; font-weight: 600; }
         .theme-btn.active { background: var(--tv-blue); color: #fff; }
+
+        .search-input { width: 100%; background: var(--tv-bg); border: 1px solid var(--tv-border); color: var(--tv-text); padding: 12px; border-radius: 8px; font-size: 16px; outline: none; margin-bottom: 10px; }
 
         #toast { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: var(--tv-panel); color: var(--tv-text); padding: 12px 20px; border-radius: 4px; font-size: 14px; border-left: 3px solid var(--tv-blue); opacity: 0; pointer-events: none; z-index: 200; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
         .toast-show { display: block !important; animation: toastIn 0.3s forwards; }
@@ -159,22 +169,38 @@
         </div>
     </div>
 
+    <div class="modal" id="searchModal" onclick="closeModal('searchModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Выбрать монету</div>
+                <button class="close-btn" onclick="closeModal('searchModal')">×</button>
+            </div>
+            <input type="text" class="search-input" id="coinSearchInput" placeholder="Например: BTCUSDT, ETHUSDT">
+            <button class="exec-btn buy" onclick="changeCoin()" style="background: var(--tv-blue);">Загрузить</button>
+        </div>
+    </div>
+
     <div class="left-panel">
         <div class="top-toolbar">
-            <div class="ticker" onclick="openModal('walletModal')">SOL/USDT ⚡</div>
+            <div class="ticker" onclick="openModal('searchModal')" id="current-ticker">SOL/USDT ⚡</div>
             <div class="tools">
-                <span>1м</span> <span>5м</span> <span>15м</span> <span>1ч</span> <span>4ч</span> <span>1Д</span>
+                <span onclick="changeTimeframe('1', this)">1м</span>
+                <span onclick="changeTimeframe('5', this)">5м</span>
+                <span class="active" onclick="changeTimeframe('15', this)">15м</span>
+                <span onclick="changeTimeframe('60', this)">1ч</span>
+                <span onclick="changeTimeframe('240', this)">4ч</span>
+                <span onclick="changeTimeframe('D', this)">1Д</span>
             </div>
         </div>
         <div class="ohlc-bar">
-            <span>ОТКР <span class="val">145.10</span></span>
-            <span>МАКС <span class="val up">145.50</span></span>
-            <span>МИН <span class="val">144.90</span></span>
-            <span>ЗАКР <span class="val up" id="current-price">145.50</span></span>
+            <span>ОТКР <span class="val">106.10</span></span>
+            <span>МАКС <span class="val up">106.50</span></span>
+            <span>МИН <span class="val">105.90</span></span>
+            <span>ЗАКР <span class="val up" id="current-price">106.28</span></span>
         </div>
 
         <div class="chart-container">
-            <!-- Линия ордера -->
+            <!-- Линия ордера (всегда по центру) -->
             <div class="order-line" id="orderLine">
                 <div class="order-badge">
                     <span>New order</span>
@@ -235,68 +261,87 @@
 
     let currentBalance = 0;
     let currentMode = 'buy';
-    let currentCoin = "SOL"; 
-    let virtualPrice = 106.28; // Стартовая цена (как на скрине)
+    
+    let currentCoin = "SOL";
+    let currentSymbol = "BINANCE:SOLUSDT"; 
+    let currentInterval = "15";
+    
+    let virtualPrice = 106.28; 
     let entryPrice = 0;
     let myCoins = 0;
 
-    // --- Загрузка данных ---
     db.ref('users/' + user + '/balance').on('value', snap => {
         currentBalance = snap.val() || 0;
         document.getElementById('rub-balance').innerText = currentBalance.toLocaleString() + ' ₽';
     });
 
-    db.ref('users/' + user + '/portfolio/' + currentCoin).on('value', snap => {
-        const data = snap.val();
-        if (data && data.amountCoin > 0) {
-            myCoins = data.amountCoin;
-            entryPrice = data.entryPrice || virtualPrice;
-            document.getElementById('orderLine').style.display = 'block';
-            document.getElementById('orderPrice').innerText = entryPrice.toFixed(2);
-            positionOrderLine(entryPrice);
-        } else {
-            myCoins = 0;
-            entryPrice = 0;
-            document.getElementById('orderLine').style.display = 'none';
-        }
-        renderWallet(data);
-    });
-
-    // График
-    let tvWidget = null;
-    function initTradingView() {
-        tvWidget = new TradingView.widget({
-            "autosize": true, "symbol": "BINANCE:SOLUSDT", "interval": "15",
-            "timezone": "Etc/UTC", "theme": "dark", "style": "1", "locale": "ru",
-            "enable_publishing": false, "allow_symbol_change": false,
-            "container_id": "tradingview_widget",
-            "backgroundColor": "#000000", "gridColor": "#2a2e39"
+    function loadPortfolio() {
+        db.ref('users/' + user + '/portfolio/' + currentCoin).on('value', snap => {
+            const data = snap.val();
+            if (data && data.amountCoin > 0) {
+                myCoins = data.amountCoin;
+                entryPrice = data.entryPrice || virtualPrice;
+                // Показываем линию
+                document.getElementById('orderLine').style.display = 'block';
+                document.getElementById('orderPrice').innerText = entryPrice.toFixed(2);
+            } else {
+                myCoins = 0;
+                entryPrice = 0;
+                // Прячем линию
+                document.getElementById('orderLine').style.display = 'none';
+            }
+            renderWallet(data);
         });
     }
+
+    let tvWidget = null;
+    function initTradingView() {
+        document.getElementById('tradingview_widget').innerHTML = '';
+        
+        tvWidget = new TradingView.widget({
+            "autosize": true, 
+            "symbol": currentSymbol, 
+            "interval": currentInterval,
+            "timezone": "Etc/UTC", 
+            "theme": document.body.classList.contains('light-theme') ? "light" : "dark", 
+            "style": "1", 
+            "locale": "ru",
+            "enable_publishing": false, 
+            "allow_symbol_change": false,
+            "container_id": "tradingview_widget",
+            "backgroundColor": document.body.classList.contains('light-theme') ? "#f4f4f4" : "#000000", 
+            "gridColor": document.body.classList.contains('light-theme') ? "#e0e3eb" : "#2a2e39"
+        });
+    }
+    
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/tv.js';
     script.onload = initTradingView;
     document.head.appendChild(script);
 
-    // --- Позиционирование линии ордера ---
-    // Мы имитируем визуальное положение. Берем текущую цену из API (или нашу виртуальную)
-    // и высчитываем, где на экране должна быть линия.
-    function positionOrderLine(price) {
-        const chartHeight = document.querySelector('.chart-container').offsetHeight;
-        const maxPrice = virtualPrice + 5; // Верхняя граница графика
-        const minPrice = virtualPrice - 5; // Нижняя граница графика
-        
-        // Вычисляем процент от верха
-        let percent = ((maxPrice - price) / (maxPrice - minPrice)) * 100;
-        
-        // Ограничиваем, чтобы линия не улетала за пределы графика
-        if (percent < 5) percent = 5;
-        if (percent > 95) percent = 95;
-
-        document.getElementById('orderLine').style.top = `${percent}%`;
+    function changeTimeframe(interval, btn) {
+        currentInterval = interval;
+        document.querySelectorAll('.top-toolbar .tools span').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        initTradingView();
     }
 
-    // --- Симуляция рынка ---
+    function changeCoin() {
+        let inputVal = document.getElementById('coinSearchInput').value.trim().toUpperCase();
+        if (!inputVal) return;
+        if (!inputVal.includes('USDT')) inputVal += 'USDT';
+
+        currentSymbol = "BINANCE:" + inputVal;
+        currentCoin = inputVal.replace('USDT', '');
+
+        document.getElementById('current-ticker').innerText = `${currentCoin}/USDT ⚡`;
+        closeModal('searchModal');
+        document.getElementById('coinSearchInput').value = '';
+
+        initTradingView();
+        loadPortfolio();
+    }
+
     function updateMarket() {
         let change = (Math.random() - 0.5) * 0.4;
         virtualPrice += change;
@@ -305,12 +350,7 @@
         priceEl.innerText = virtualPrice.toFixed(2);
         priceEl.className = 'val ' + (change > 0 ? 'up' : '');
 
-        // Двигаем линию ордера, если она есть
-        if (entryPrice > 0) {
-            positionOrderLine(entryPrice);
-        }
-
-        // Генерируем стакан
+        // Стакан
         const book = document.getElementById('orderBook');
         let html = '';
         for (let i = 5; i >= 1; i--) {
@@ -329,7 +369,6 @@
     setInterval(updateMarket, 1500);
     updateMarket();
 
-    // --- ЛОГИКА ТОРГОВЛИ ---
     function setMode(m) {
         currentMode = m;
         const slider = document.getElementById('toggle-slider');
@@ -349,10 +388,8 @@
     function setPct(p) {
         const amtInput = document.getElementById('amt');
         if (currentMode === 'buy') {
-            // Если покупаем - берем % от баланса в рублях
             amtInput.value = Math.floor(currentBalance * (p / 100));
         } else {
-            // Если продаем - берем % от количества монет и переводим в рубли
             if (myCoins > 0) {
                 const rubValue = myCoins * (virtualPrice * 90);
                 amtInput.value = Math.floor(rubValue * (p / 100));
@@ -456,7 +493,12 @@
         }
     }
 
-    function openModal(id) { document.getElementById(id).classList.add('show'); }
+    function openModal(id) { 
+        if(id === 'walletModal') {
+            db.ref('users/' + user + '/portfolio/' + currentCoin).once('value').then(snap => renderWallet(snap.val()));
+        }
+        document.getElementById(id).classList.add('show'); 
+    }
     function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
     function setTheme(theme) {
@@ -464,14 +506,19 @@
             document.getElementById('body').classList.add('light-theme');
             document.getElementById('theme-light').classList.add('active');
             document.getElementById('theme-dark').classList.remove('active');
+            localStorage.setItem('appTheme', 'light');
         } else {
             document.getElementById('body').classList.remove('light-theme');
             document.getElementById('theme-dark').classList.add('active');
             document.getElementById('theme-light').classList.remove('active');
+            localStorage.setItem('appTheme', 'dark');
         }
+        if (typeof tvWidget !== 'undefined') initTradingView();
     }
 
     setMode('buy');
+    loadPortfolio(); 
+    if (localStorage.getItem('appTheme') === 'light') setTheme('light');
 </script>
 </body>
 </html>
