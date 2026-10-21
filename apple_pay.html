@@ -12,21 +12,17 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; 
             padding: 0 16px; overflow-x: hidden; -webkit-tap-highlight-color: transparent;
         }
-        
         header { padding: 60px 0 20px; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.8s ease-out; }
         h1 { font-size: 34px; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
         .logout-link { color: var(--apple-red); font-size: 14px; text-decoration: none; margin-top: 4px; cursor: pointer; }
         .add-btn { color: var(--apple-blue); font-size: 28px; text-decoration: none; transition: transform 0.2s; }
         .add-btn:active { transform: scale(0.8); }
-        
         .cash-card {
             background: #fff; border-radius: 14px; padding: 20px; color: #000;
             margin-bottom: 20px; animation: springUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         .cash-label { font-size: 13px; font-weight: 600; color: #666; text-transform: uppercase; }
         .cash-amount { font-size: 34px; font-weight: 700; margin-top: 5px; }
-
-        /* Стили для кнопки терминала */
         .terminal-btn {
             background: linear-gradient(135deg, #2962ff, #0033cc); border-radius: 14px; 
             padding: 20px; color: white; margin-bottom: 25px; display: flex; 
@@ -35,7 +31,6 @@
             text-decoration: none; animation: springUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         .terminal-btn:active { transform: scale(0.97); }
-
         #cardsList { display: flex; flex-direction: column; gap: 12px; }
         .card-row {
             background: var(--card-gray); border-radius: 14px; padding: 14px 16px;
@@ -45,8 +40,6 @@
         }
         .card-row:active { transform: scale(0.96); background: #2c2c2e; }
         .card-thumb { width: 52px; height: 33px; border-radius: 6px; margin-right: 15px; background: linear-gradient(135deg, #3a3a3c, #000); }
-
-        /* Оверлей с плавным блюром */
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0);
@@ -54,7 +47,6 @@
             display: none; z-index: 1000; align-items: flex-end;
             transition: background 0.4s ease, backdrop-filter 0.4s ease;
         }
-        
         .action-sheet {
             width: 100%; background: #1c1c1e; border-radius: 20px 20px 0 0;
             padding: 25px 20px 45px; box-sizing: border-box;
@@ -62,22 +54,12 @@
             transition: transform 0.5s cubic-bezier(0.15, 1, 0.3, 1);
             border-top: 1px solid rgba(255,255,255,0.08);
         }
-
-        body.modal-open .overlay { 
-            display: flex; 
-            background: rgba(0,0,0,0.5); 
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); 
-        }
+        body.modal-open .overlay { display: flex; background: rgba(0,0,0,0.5); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); }
         body.modal-open .action-sheet { transform: translateY(0); }
-
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .action-item {
-            background: #2c2c2e; border-radius: 14px; padding: 18px;
-            text-decoration: none; color: #fff; text-align: center; font-weight: 600;
-        }
+        .action-item { background: #2c2c2e; border-radius: 14px; padding: 18px; text-decoration: none; color: #fff; text-align: center; font-weight: 600; }
         .btn-delete { width: 100%; background: rgba(255, 59, 48, 0.12); color: var(--apple-red); border: none; padding: 16px; border-radius: 14px; margin-top: 20px; font-weight: 600; cursor: pointer; }
         .btn-cancel { width: 100%; background: #333; color: #fff; border: none; padding: 16px; border-radius: 14px; margin-top: 10px; font-weight: 600; cursor: pointer; }
-
         @keyframes springUp { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
     </style>
@@ -98,7 +80,6 @@
         <div id="totalBalance" class="cash-amount">0 ₽</div>
     </div>
 
-    <!-- Кнопка перехода в Axiom Terminal -->
     <a href="terminal.html" class="terminal-btn" onclick="playClickSound()">
         <div>
             <div style="font-size: 18px; font-weight: bold;">Axiom Terminal 📈</div>
@@ -125,7 +106,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
-        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+        // ОБНОВЛЕННАЯ ССЫЛКА НА ЕВРОПЕЙСКИЙ РЕГИОН
+        const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.europe-west1.firebasedatabase.app/" };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const user = localStorage.getItem('walletUser');
@@ -134,21 +116,19 @@
         if (!user) window.location.href = 'index.html';
         else document.getElementById('userHeader').innerText = user.charAt(0).toUpperCase() + user.slice(1);
 
-        // Функция звука клика
         function playClickSound() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
+                osc.connect(gain); gain.connect(ctx.destination);
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(800, ctx.currentTime);
                 osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
                 gain.gain.setValueAtTime(0.1, ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
                 osc.start(); osc.stop(ctx.currentTime + 0.1);
-            } catch(e) { console.log('Аудио не поддерживается'); }
+            } catch(e) { }
         }
 
         db.ref('users/' + user).on('value', (snap) => {
