@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TradingView Terminal & Wallet</title>
+    <title>Trading Terminal</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -21,42 +21,37 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
         html, body { height: 100%; overflow: hidden; background: var(--tv-bg); color: var(--tv-text); }
         
-        /* Базовая структура (Мобилки) */
         .app { 
             width: 100%; height: 100%; margin: 0 auto;
             display: flex; flex-direction: column; position: relative; overflow: hidden;
         }
 
-        /* Структура для ПК */
+        /* АДАПТИВНОСТЬ ПОД ПК (КАК НА ВТОРОМ СКРИНШОТЕ) */
         @media (min-width: 900px) {
             .app {
                 flex-direction: row;
-                max-width: 100%; /* Растягиваем на весь экран */
+                max-width: 100%;
             }
             .left-panel {
-                flex: 1; /* График занимает всё свободное место */
-                display: flex;
-                flex-direction: column;
+                flex: 1; display: flex; flex-direction: column;
                 border-right: 1px solid var(--tv-border);
             }
             .right-panel {
-                width: 380px; /* Фиксированная ширина панели справа */
-                display: flex;
-                flex-direction: column;
-                background: var(--tv-bg);
-                flex-shrink: 0;
+                width: 350px; display: flex; flex-direction: column;
+                background: var(--tv-bg); flex-shrink: 0;
+                border-left: 1px solid var(--tv-border);
             }
         }
 
-        /* --- ВЕРХНЯЯ ПАНЕЛЬ --- */
+        /* --- ШАПКА --- */
         .hdr { 
             display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 16px; background: var(--tv-bg); border-bottom: 1px solid var(--tv-border);
+            padding: 10px 16px; background: var(--tv-bg); border-bottom: 1px solid var(--tv-border);
             z-index: 10;
         }
-        .back-btn { color: var(--tv-text-muted); text-decoration: none; font-size: 14px; font-weight: 500; }
-        .user-info { display: flex; align-items: center; gap: 10px; }
-        .balance-box { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .back-btn { color: var(--tv-text-muted); text-decoration: none; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .balance-box { font-size: 14px; font-weight: 600; color: var(--tv-text); }
         .wallet-btn { 
             background: var(--tv-panel); border: 1px solid var(--tv-border); color: var(--tv-text);
             padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
@@ -64,18 +59,27 @@
         }
         .wallet-btn:hover { background: #2a2e39; }
 
+        /* --- ПАНЕЛЬ ИНСТРУМЕНТОВ (Имитация верхней панели TV) --- */
+        .toolbar {
+            display: flex; align-items: center; gap: 15px; padding: 8px 16px;
+            background: var(--tv-bg); border-bottom: 1px solid var(--tv-border);
+            font-size: 13px; color: var(--tv-text-muted); overflow-x: auto;
+        }
+        .toolbar-item { cursor: pointer; transition: color 0.2s; }
+        .toolbar-item:hover { color: var(--tv-text); }
+        .toolbar-item.active { color: var(--tv-blue); }
+
         /* --- ГРАФИК --- */
         .chart-container { flex: 1 1 auto; position: relative; background: var(--tv-bg); min-height: 300px; }
         #tradingview_widget { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
 
-        /* --- ПАНЕЛЬ УПРАВЛЕНИЯ --- */
+        /* --- ПАНЕЛЬ УПРАВЛЕНИЯ (Справа) --- */
         .panel { 
-            padding: 16px; display: flex; flex-direction: column; gap: 12px; 
-            background: var(--tv-bg); flex-shrink: 0; border-top: 1px solid var(--tv-border);
-            z-index: 5;
+            padding: 16px; display: flex; flex-direction: column; gap: 15px; 
+            background: var(--tv-bg); flex-shrink: 0; z-index: 5;
         }
         @media (min-width: 900px) {
-            .panel { border-top: none; padding: 24px; flex: 1; justify-content: flex-start; }
+            .panel { padding: 20px; flex: 1; justify-content: flex-start; }
         }
 
         .toggle-wrapper { position: relative; display: flex; background: var(--tv-panel); border-radius: 4px; padding: 3px; border: 1px solid var(--tv-border); }
@@ -99,33 +103,36 @@
         .exec-btn.buy { background: var(--tv-green); }
         .exec-btn.sell { background: var(--tv-red); }
         .exec-btn:active { transform: scale(0.98); }
-        .exec-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Блок "Информация" (чтобы заполнить пустоту справа на ПК) */
+        .info-widget {
+            display: none; /* Скрыто на телефоне */
+            background: var(--tv-panel); border: 1px solid var(--tv-border);
+            border-radius: 8px; padding: 15px; margin-top: 20px;
+        }
+        @media (min-width: 900px) { .info-widget { display: block; } }
+        .info-title { font-size: 12px; color: var(--tv-text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 10px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+        .info-val { font-weight: 600; }
 
         /* --- МОДАЛЬНОЕ ОКНО КОШЕЛЬКА --- */
         .wallet-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
-            z-index: 100; display: none; align-items: flex-end;
-            opacity: 0; transition: opacity 0.3s;
+            z-index: 100; display: none; align-items: flex-end; opacity: 0; transition: opacity 0.3s;
         }
         .wallet-modal.show { display: flex; opacity: 1; }
-        
         .wallet-content {
             width: 100%; background: var(--tv-panel); border-top-left-radius: 20px; border-top-right-radius: 20px;
             padding: 20px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             max-height: 70%; display: flex; flex-direction: column;
         }
-        @media (min-width: 900px) {
-            .wallet-content { max-width: 500px; margin: 0 auto; border-radius: 20px; margin-bottom: 50px; max-height: 80%; }
-        }
+        @media (min-width: 900px) { .wallet-content { max-width: 500px; margin: 0 auto; border-radius: 20px; margin-bottom: 50px; } }
         .wallet-modal.show .wallet-content { transform: translateY(0); }
-
         .wallet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .wallet-title { font-size: 18px; font-weight: 700; }
         .close-btn { background: none; border: none; color: var(--tv-text-muted); font-size: 24px; cursor: pointer; }
-
         .coins-list { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; }
-        
         .coin-item { display: flex; justify-content: space-between; align-items: center; background: var(--tv-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--tv-border); }
         .coin-info { display: flex; align-items: center; gap: 12px; }
         .coin-icon { width: 36px; height: 36px; background: #2a2e39; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; color: var(--tv-blue); }
@@ -133,7 +140,6 @@
         .coin-amount { font-size: 12px; color: var(--tv-text-muted); }
         .coin-value { text-align: right; }
         .coin-rub { font-weight: 700; font-size: 15px; color: var(--tv-green); }
-        .coin-usd { font-size: 12px; color: var(--tv-text-muted); }
         .empty-wallet { text-align: center; color: var(--tv-text-muted); padding: 30px 0; font-size: 14px; }
 
         /* Тост */
@@ -155,9 +161,7 @@
                 <div class="wallet-title">Мой Кошелек</div>
                 <button class="close-btn" onclick="closeWallet()">×</button>
             </div>
-            <div class="coins-list" id="coinsList">
-                <div class="empty-wallet">У вас пока нет купленных монет.<br>Купите что-нибудь в терминале!</div>
-            </div>
+            <div class="coins-list" id="coinsList"></div>
         </div>
     </div>
 
@@ -168,10 +172,22 @@
             <div class="user-info">
                 <div class="balance-box"><span id="rub-balance">0</span> ₽</div>
                 <button class="wallet-btn" onclick="openWallet()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
                     Кошелек
                 </button>
             </div>
+        </div>
+
+        <!-- Имитация панели инструментов TV -->
+        <div class="toolbar">
+            <div class="toolbar-item active">SOLUSDT</div>
+            <div class="toolbar-item">1м</div>
+            <div class="toolbar-item">15м</div>
+            <div class="toolbar-item">1ч</div>
+            <div class="toolbar-item">4ч</div>
+            <div class="toolbar-item">1Д</div>
+            <div style="flex:1"></div>
+            <div class="toolbar-item">Индикаторы</div>
         </div>
 
         <div class="chart-container">
@@ -201,6 +217,15 @@
             </div>
 
             <button class="exec-btn buy" id="exec" onclick="trade()">Купить по рынку</button>
+
+            <!-- Дополнительный блок для ПК, чтобы заполнить пустоту -->
+            <div class="info-widget">
+                <div class="info-title">Информация об инструменте</div>
+                <div class="info-row"><span>Тикер:</span> <span class="info-val">SOL/USDT</span></div>
+                <div class="info-row"><span>Биржа:</span> <span class="info-val">Binance</span></div>
+                <div class="info-row"><span>Тип:</span> <span class="info-val">Криптовалюта</span></div>
+                <div class="info-row"><span>Симуляция:</span> <span class="info-val" style="color:var(--tv-blue)">Включена</span></div>
+            </div>
         </div>
     </div>
 </div>
