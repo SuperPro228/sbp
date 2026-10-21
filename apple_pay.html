@@ -21,10 +21,20 @@
         
         .cash-card {
             background: #fff; border-radius: 14px; padding: 20px; color: #000;
-            margin-bottom: 30px; animation: springUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            margin-bottom: 20px; animation: springUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         .cash-label { font-size: 13px; font-weight: 600; color: #666; text-transform: uppercase; }
         .cash-amount { font-size: 34px; font-weight: 700; margin-top: 5px; }
+
+        /* Стили для кнопки терминала */
+        .terminal-btn {
+            background: linear-gradient(135deg, #2962ff, #0033cc); border-radius: 14px; 
+            padding: 20px; color: white; margin-bottom: 25px; display: flex; 
+            align-items: center; justify-content: space-between; 
+            box-shadow: 0 10px 20px rgba(41, 98, 255, 0.2);
+            text-decoration: none; animation: springUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .terminal-btn:active { transform: scale(0.97); }
 
         #cardsList { display: flex; flex-direction: column; gap: 12px; }
         .card-row {
@@ -39,13 +49,12 @@
         /* Оверлей с плавным блюром */
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0); /* Начальное состояние прозрачное */
+            background: rgba(0,0,0,0);
             backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px);
             display: none; z-index: 1000; align-items: flex-end;
             transition: background 0.4s ease, backdrop-filter 0.4s ease;
         }
         
-        /* Менюшка */
         .action-sheet {
             width: 100%; background: #1c1c1e; border-radius: 20px 20px 0 0;
             padding: 25px 20px 45px; box-sizing: border-box;
@@ -54,7 +63,6 @@
             border-top: 1px solid rgba(255,255,255,0.08);
         }
 
-        /* Состояние при открытии */
         body.modal-open .overlay { 
             display: flex; 
             background: rgba(0,0,0,0.5); 
@@ -90,6 +98,15 @@
         <div id="totalBalance" class="cash-amount">0 ₽</div>
     </div>
 
+    <!-- Кнопка перехода в Axiom Terminal -->
+    <a href="terminal.html" class="terminal-btn" onclick="playClickSound()">
+        <div>
+            <div style="font-size: 18px; font-weight: bold;">Axiom Terminal 📈</div>
+            <div style="font-size: 13px; opacity: 0.8;">Торговля мемкоинами</div>
+        </div>
+        <div style="font-size: 24px;">→</div>
+    </a>
+
     <div id="cardsList"></div>
 
     <div class="overlay" id="overlay" onclick="closeMenu()">
@@ -117,6 +134,23 @@
         if (!user) window.location.href = 'index.html';
         else document.getElementById('userHeader').innerText = user.charAt(0).toUpperCase() + user.slice(1);
 
+        // Функция звука клика
+        function playClickSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start(); osc.stop(ctx.currentTime + 0.1);
+            } catch(e) { console.log('Аудио не поддерживается'); }
+        }
+
         db.ref('users/' + user).on('value', (snap) => {
             const data = snap.val();
             if (!data) return;
@@ -135,6 +169,7 @@
         });
 
         function openMenu(name, digits, id) {
+            playClickSound();
             selectedCardId = id;
             document.getElementById('sheetTitle').innerText = name + ' •••• ' + digits;
             const overlay = document.getElementById('overlay');
