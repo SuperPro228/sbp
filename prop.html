@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Prop Terminal - Проп-счета</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg-main: #0b0e11;
+            --bg-panel: #1e2329;
+            --border: #2b3139;
+            --text-main: #eaecef;
+            --text-muted: #848e9c;
+            --blue: #2962ff;
+            --green: #0ecb81;
+            --red: #f6465d;
+            --yellow: #fcd535;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; overflow: hidden; background: var(--bg-main); color: var(--text-main); }
+        
+        .app { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+        @media (min-width: 900px) {
+            .app { flex-direction: row; }
+            .left-panel { flex: 1; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+            .right-panel { width: 360px; display: flex; flex-direction: column; background: var(--bg-panel); flex-shrink: 0; }
+        }
+
+        /* --- ВЕРХНЯЯ ПАНЕЛЬ --- */
+        .top-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 15px; height: 50px; background: var(--bg-main); border-bottom: 1px solid var(--border); }
+        .ticker { color: var(--blue); font-weight: 700; font-size: 16px; }
+        .balance-box { font-size: 14px; font-weight: 600; color: var(--text-main); }
+
+        /* --- ГРАФИК --- */
+        .chart-container { flex: 1 1 auto; position: relative; background: var(--bg-main); min-height: 300px; }
+        .tradingview-widget-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .tradingview-widget-container__widget { width: 100%; height: 100%; }
+
+        /* --- ПРАВАЯ ПАНЕЛЬ --- */
+        .panel-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-main); }
+        .p-tab { flex: 1; text-align: center; padding: 14px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; }
+        .p-tab.active { color: var(--text-main); border-bottom-color: var(--blue); }
+
+        .tab-content { display: none; flex-direction: column; flex: 1; overflow-y: auto; }
+        .tab-content.active { display: flex; }
+
+        .panel { padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+
+        /* Блок правил пропа */
+        .prop-info { background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 15px; font-size: 13px; }
+        .prop-info-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .prop-info-row:last-child { margin-bottom: 0; }
+        .info-val { font-weight: 600; }
+        .info-val.green { color: var(--green); }
+        .info-val.red { color: var(--red); }
+
+        .btn-buy-prop { background: var(--blue); color: white; padding: 15px; border: none; border-radius: 6px; font-weight: 700; font-size: 15px; cursor: pointer; text-align: center; margin-top: 10px; }
+        
+        /* Позиции */
+        .position-item { background: var(--bg-main); padding: 12px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 10px; }
+        .pos-header { display: flex; justify-content: space-between; font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+        .pos-long { color: var(--green); }
+        .pos-short { color: var(--red); }
+        .pos-details { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+        .pos-pnl { font-weight: 700; font-size: 14px; text-align: right; margin-top: 8px; }
+        .close-btn { width: 100%; background: var(--border); color: white; border: none; padding: 10px; border-radius: 4px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+        .close-btn:hover { background: var(--red); }
+
+        /* Модалки */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: var(--bg-panel); border-radius: 8px; padding: 25px; width: 90%; max-width: 400px; text-align: center; border: 1px solid var(--border); }
+        .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+        .modal-desc { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .m-cancel { background: var(--border); color: var(--text-main); }
+        .m-confirm { background: var(--blue); color: white; }
+
+        /* Тост */
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--bg-panel); color: var(--text-main); padding: 12px 24px; border-radius: 6px; font-size: 14px; border-left: 3px solid var(--blue); opacity: 0; pointer-events: none; z-index: 200; display: none; }
+        .toast-show { display: block !important; animation: toastIn 0.3s forwards; }
+        .toast-hide { animation: toastOut 0.3s forwards; }
+        @keyframes toastIn { 0% { transform: translate(-50%, -20px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
+        @keyframes toastOut { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div id="toast"></div>
+
+    <!-- Модалка покупки пропа -->
+    <div class="modal" id="buyPropModal">
+        <div class="modal-content">
+            <div class="modal-title">Купить Проп-счет?</div>
+            <div class="modal-desc">
+                Вы получите виртуальный капитал <b>$10,000</b>.<br><br>
+                Стоимость: <b>500 ₽</b> с вашего баланса.<br>
+                Цель: заработать 10% ($1,000).<br>
+                Макс. просадка: 5% ($500).
+            </div>
+            <div class="modal-btns">
+                <button class="modal-btn m-cancel" onclick="closeModal('buyPropModal')">Отмена</button>
+                <button class="modal-btn m-confirm" onclick="confirmBuyProp()">Купить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЛЕВАЯ ПАНЕЛЬ (График) -->
+    <div class="left-panel">
+        <div class="top-toolbar">
+            <div class="ticker">BINANCE:SOLUSDT</div>
+            <div class="balance-box">Игровой баланс: <span id="real-balance">0</span> ₽</div>
+        </div>
+
+        <div class="chart-container">
+            <div class="tradingview-widget-container">
+                <div class="tradingview-widget-container__widget" id="tv_chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ПРАВАЯ ПАНЕЛЬ -->
+    <div class="right-panel">
+        <div class="panel-tabs">
+            <div class="p-tab active" onclick="switchTab('dashboard')">Дашборд</div>
+            <div class="p-tab" onclick="switchTab('positions')">Сделки</div>
+        </div>
+
+        <!-- Дашборд -->
+        <div class="tab-content active" id="tab-dashboard">
+            <div class="panel" id="dashboard-content">
+                <!-- Заполняется скриптом -->
+            </div>
+        </div>
+
+        <!-- Позиции -->
+        <div class="tab-content" id="tab-positions">
+            <div class="panel" id="positions-list">
+                <div style="text-align:center; color:var(--text-muted); padding:20px;">Нет открытых сделок</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script>
+    const firebaseConfig = { databaseURL: "https://dsadasdas-25283-default-rtdb.europe-west1.firebasedatabase.app/" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const user = localStorage.getItem('walletUser');
+    if (!user) window.location.href = 'index.html';
+
+    // Константы пропа
+    const PROP_PRICE_RUB = 500;
+    const PROP_START_BALANCE_USD = 10000;
+    const PROP_TARGET_PERCENT = 10; // 10%
+    const PROP_MAX_DRAWDOWN_PERCENT = 5; // 5%
+
+    let realBalance = 0;
+    let propAccount = null; // Данные пропа из базы
+    let currentPrice = 106.28;
+    let openPositions = [];
+
+    // --- ГРАФИК ---
+    function initChart() {
+        new TradingView.widget({
+            "width": "100%", "height": "100%", "symbol": "BINANCE:SOLUSDT", "interval": "15",
+            "timezone": "Etc/UTC", "theme": "dark", "style": "1", "locale": "ru",
+            "enable_publishing": false, "allow_symbol_change": true, "container_id": "tv_chart",
+            "hide_side_toolbar": false
+        });
+    }
+    initChart();
+
+    // --- ЗАГРУЗКА ИЗ БАЗЫ ---
+    db.ref('users/' + user + '/balance').on('value', snap => {
+        realBalance = snap.val() || 0;
+        document.getElementById('real-balance').innerText = realBalance.toLocaleString();
+    });
+
+    db.ref('users/' + user + '/propAccount').on('value', snap => {
+        propAccount = snap.val();
+        renderDashboard();
+    });
+
+    db.ref('users/' + user + '/propPositions').on('value', snap => {
+        openPositions = [];
+        const data = snap.val() || {};
+        Object.keys(data).forEach(key => openPositions.push({ id: key, ...data[key] }));
+        renderPositions();
+    });
+
+    // --- ОТРИСОВКА ДАШБОРДА ---
+    function renderDashboard() {
+        const container = document.getElementById('dashboard-content');
+        
+        if (!propAccount) {
+            // Пропа нет, предлагаем купить
+            container.innerHTML = `
+                <div style="text-align:center; padding: 20px 0;">
+                    <div style="font-size: 50px; margin-bottom: 15px;">🏢</div>
+                    <h2 style="font-size: 20px; margin-bottom: 10px;">У вас нет проп-счета</h2>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Купите счет, получите $10,000 виртуальных денег и торгуйте с плечом. При выполнении цели — выводите прибыль!</p>
+                    <button class="btn-buy-prop" onclick="openModal('buyPropModal')">Купить за ${PROP_PRICE_RUB} ₽</button>
+                </div>
+            `;
+            return;
+        }
+
+        // Если проп есть, считаем статистику
+        const balance = propAccount.balance || PROP_START_BALANCE_USD;
+        const target = PROP_START_BALANCE_USD * (1 + PROP_TARGET_PERCENT / 100);
+        const maxDrawdown = PROP_START_BALANCE_USD * (1 - PROP_MAX_DRAWDOWN_PERCENT / 100);
+        
+        const progress = ((balance - PROP_START_BALANCE_USD) / (target - PROP_START_BALANCE_USD)) * 100;
+        const pnlPercent = ((balance - PROP_START_BALANCE_USD) / PROP_START_BALANCE_USD) * 100;
+
+        let statusText = "В процессе";
+        let statusColor = "var(--yellow)";
+        
+        if (balance >= target) {
+            statusText = "ЦЕЛЬ ДОСТИГНУТА!";
+            statusColor = "var(--green)";
+        } else if (balance <= maxDrawdown) {
+            statusText = "ПРОВАЛ (Просадка)";
+            statusColor = "var(--red)";
+        }
+
+        container.innerHTML = `
+            <div class="prop-info">
+                <div class="prop-info-row"><span>Статус:</span> <span class="info-val" style="color:${statusColor}">${statusText}</span></div>
+                <div class="prop-info-row"><span>Баланс счета:</span> <span class="info-val">$${balance.toFixed(2)}</span></div>
+                <div class="prop-info-row"><span>Цель (10%):</span> <span class="info-val green">$${target.toFixed(2)}</span></div>
+                <div class="prop-info-row"><span>Макс. просадка (5%):</span> <span class="info-val red">$${maxDrawdown.toFixed(2)}</span></div>
+                <div class="prop-info-row"><span>PnL:</span> <span class="info-val" style="color:${pnlPercent >= 0 ? 'var(--green)' : 'var(--red)'}">${pnlPercent >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%</span></div>
+            </div>
+
+            <div style="height: 8px; background: var(--border); border-radius: 4px; margin: 15px 0; overflow: hidden;">
+                <div style="height: 100%; width: ${Math.min(100, Math.max(0, progress))}%; background: ${progress >= 100 ? 'var(--green)' : 'var(--blue)'}; transition: width 0.5s;"></div>
+            </div>
+
+            ${balance >= target ? `<button class="btn-buy-prop" style="background:var(--green);" onclick="withdrawProp()">Вывести прибыль</button>` : ''}
+            
+            <div style="margin-top: 20px;">
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">Открыть сделку</div>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button class="m-cancel" style="flex:1; background:var(--green); color:white;" onclick="openTrade('long')">Лонг</button>
+                    <button class="m-cancel" style="flex:1; background:var(--red); color:white;" onclick="openTrade('short')">Шорт</button>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); text-align: center;">Плечо: x10</div>
+            </div>
+        `;
+    }
+
+    // --- ТОРГОВЛЯ ---
+    async function openTrade(type) {
+        if (!propAccount) return;
+        if (propAccount.balance <= 0) return showToast('Счет ликвидирован', 'error');
+
+        // Размер позиции: 10% от баланса с плечом x10
+        const margin = propAccount.balance * 0.1; 
+        const size = margin * 10;
+        
+        const entryPrice = currentPrice;
+        let liqPrice;
+        if (type === 'long') liqPrice = entryPrice - (entryPrice / 10);
+        else liqPrice = entryPrice + (entryPrice / 10);
+
+        const newPos = {
+            type, margin, size, entryPrice, liqPrice, coin: 'SOL'
+        };
+
+        await db.ref('users/' + user + '/propPositions').push(newPos);
+        showToast(`${type === 'long' ? 'Лонг' : 'Шорт'} открыт`, 'success');
+        switchTab('positions');
+    }
+
+    async function closeTrade(id) {
+        const pos = openPositions.find(p => p.id === id);
+        if (!pos) return;
+
+        // Имитация PnL
+        const priceDiff = (currentPrice - pos.entryPrice) / pos.entryPrice;
+        let pnl = pos.type === 'long' ? pos.size * priceDiff : pos.size * -priceDiff;
+        
+        // Обновляем баланс пропа
+        const newBalance = propAccount.balance + pnl;
+        
+        await db.ref('users/' + user + '/propAccount').update({ balance: newBalance });
+        await db.ref('users/' + user + '/propPositions/' + id).remove();
+
+        // Проверка на ликвидацию
+        if (newBalance <= PROP_START_BALANCE_USD * (1 - PROP_MAX_DRAWDOWN_PERCENT / 100)) {
+            await db.ref('users/' + user + '/propAccount').remove(); // Счет сгорел
+            showToast('ПРОСАДКА! Счет ликвидирован.', 'error');
+        } else {
+            showToast(`Сделка закрыта. PnL: $${pnl.toFixed(2)}`, pnl >= 0 ? 'success' : 'error');
+        }
+    }
+
+    // --- ПОКУПКА И ВЫВОД ---
+    function openModal(id) { document.getElementById(id).classList.add('show'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+    async function confirmBuyProp() {
+        if (realBalance < PROP_PRICE_RUB) return showToast('Недостаточно рублей на балансе', 'error');
+        
+        // Списываем рубли
+        await db.ref('users/' + user).update({ balance: realBalance - PROP_PRICE_RUB });
+        
+        // Создаем проп-счет
+        await db.ref('users/' + user + '/propAccount').set({
+            balance: PROP_START_BALANCE_USD,
+            startDate: Date.now()
+        });
+
+        closeModal('buyPropModal');
+        showToast('Проп-счет успешно куплен!', 'success');
+    }
+
+    async function withdrawProp() {
+        if (!propAccount) return;
+        const profit = propAccount.balance - PROP_START_BALANCE_USD;
+        if (profit <= 0) return;
+
+        // Конвертация в рубли (1$ = 90₽)
+        const rubProfit = profit * 90;
+
+        await db.ref('users/' + user).update({ balance: realBalance + rubProfit });
+        await db.ref('users/' + user + '/propAccount').remove(); // Счет закрывается после вывода
+
+        showToast(`Выведено ${rubProfit.toFixed(0)} ₽ на игровой баланс!`, 'success');
+    }
+
+    // --- ОТРИСОВКА ПОЗИЦИЙ ---
+    function renderPositions() {
+        const list = document.getElementById('positions-list');
+        list.innerHTML = '';
+        if (openPositions.length === 0) {
+            list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Нет открытых сделок</div>';
+            return;
+        }
+
+        openPositions.forEach(pos => {
+            const priceDiff = (currentPrice - pos.entryPrice) / pos.entryPrice;
+            let pnl = pos.type === 'long' ? pos.size * priceDiff : pos.size * -priceDiff;
+            const color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+
+            list.innerHTML += `
+                <div class="position-item">
+                    <div class="pos-header">
+                        <span>SOL/USDT</span>
+                        <span class="${pos.type === 'long' ? 'pos-long' : 'pos-short'}">${pos.type.toUpperCase()} x10</span>
+                    </div>
+                    <div class="pos-details"><span>Вход:</span> <span>${pos.entryPrice.toFixed(2)}</span></div>
+                    <div class="pos-details"><span>Ликв:</span> <span>${pos.liqPrice.toFixed(2)}</span></div>
+                    <div class="pos-pnl" style="color:${color}">${pnl > 0 ? '+' : ''}$${pnl.toFixed(2)}</div>
+                    <button class="close-btn" onclick="closeTrade('${pos.id}')">Закрыть</button>
+                </div>
+            `;
+        });
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.p-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        if(tab === 'dashboard') {
+            document.querySelectorAll('.p-tab')[0].classList.add('active');
+            document.getElementById('tab-dashboard').classList.add('active');
+            renderDashboard();
+        } else {
+            document.querySelectorAll('.p-tab')[1].classList.add('active');
+            document.getElementById('tab-positions').classList.add('active');
+            renderPositions();
+        }
+    }
+
+    function showToast(msg, type) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.borderLeftColor = type === 'error' ? 'var(--red)' : 'var(--green)';
+        t.classList.remove('toast-hide'); t.classList.add('toast-show');
+        setTimeout(() => { t.classList.remove('toast-show'); t.classList.add('toast-hide'); }, 3000);
+    }
+
+    // Симуляция изменения цены (для PnL)
+    setInterval(() => {
+        const change = (Math.random() - 0.5) * 0.01;
+        currentPrice += currentPrice * change;
+        if (openPositions.length > 0) renderPositions();
+    }, 3000);
+</script>
+</body>
+</html>
