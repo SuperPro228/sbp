@@ -3,325 +3,142 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FundingPips Clone</title>
+<title>FundingPips Clone - Shop</title>
 <style>
-  :root {
-    --primary: #0b1f4d; /* Темно-синий как на сайте */
-    --primary-hover: #153270;
-    --bg: #ffffff;
-    --bg-light: #f4f7fb;
-    --text: #1a1a1a;
-    --text-muted: #666666;
-    --green: #10b981;
-    --red: #ef4444;
-  }
+  :root { --primary: #0b1f4d; --primary-hover: #153270; --bg: #ffffff; --bg-light: #f4f7fb; --text: #1a1a1a; --muted: #666; }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   body { background: var(--bg); color: var(--text); }
-
-  /* --- Header --- */
+  
+  /* Header */
   .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid #eaeaea; position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); z-index: 100; }
-  .logo { font-weight: 800; font-size: 20px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
-  .nav-links { display: flex; gap: 25px; font-size: 14px; font-weight: 500; color: var(--primary); }
-  .nav-links span { cursor: pointer; }
-  .nav-links span:hover { color: #000; }
+  .logo { font-weight: 800; font-size: 20px; color: var(--primary); }
   .header-actions { display: flex; gap: 15px; align-items: center; }
-  .btn { padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: 0.2s; }
+  .btn { padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: 0.2s; text-decoration: none; display: inline-block; }
   .btn-primary { background: var(--primary); color: white; }
   .btn-primary:hover { background: var(--primary-hover); }
-  .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
   
-  /* --- Hero Section --- */
+  /* Hero */
   .hero { display: flex; padding: 60px 40px; max-width: 1200px; margin: 0 auto; align-items: center; gap: 40px; }
-  .hero-text { flex: 1; }
   .hero-text h1 { font-size: 56px; line-height: 1.1; color: var(--primary); margin-bottom: 20px; letter-spacing: -1px; }
-  .hero-text p { font-size: 18px; color: var(--text-muted); margin-bottom: 30px; line-height: 1.5; }
-  .hero-buttons { display: flex; gap: 15px; }
-  
-  .hero-image { flex: 1; display: flex; justify-content: center; position: relative; }
-  /* Имитация 3D-бутылки из CSS (упрощенно) */
-  .bottle-mockup { width: 250px; height: 400px; background: linear-gradient(135deg, #e0f2fe, #3b82f6, #1e3a8a); border-radius: 30px; box-shadow: 20px 20px 60px rgba(0,0,0,0.1); position: relative; transform: rotate(15deg); border: 2px solid #fff; }
+  .hero-text p { font-size: 18px; color: var(--muted); margin-bottom: 30px; }
+  .bottle-mockup { width: 250px; height: 400px; background: linear-gradient(135deg, #e0f2fe, #3b82f6, #1e3a8a); border-radius: 30px; box-shadow: 20px 20px 60px rgba(0,0,0,0.1); transform: rotate(15deg); border: 2px solid #fff; position: relative;}
   .bottle-mockup::after { content: ''; position: absolute; top: -40px; left: 50%; transform: translateX(-50%); width: 60px; height: 50px; background: linear-gradient(90deg, #9ca3af, #f3f4f6, #9ca3af); border-radius: 5px 5px 0 0; }
 
-  /* --- Pricing Section --- */
+  /* Pricing */
   .pricing { padding: 60px 40px; background: var(--bg-light); }
   .pricing-header { text-align: center; margin-bottom: 40px; }
   .pricing-header h2 { font-size: 32px; color: var(--primary); margin-bottom: 10px; }
-  .pricing-header p { color: var(--text-muted); }
-  
   .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; max-width: 1200px; margin: 0 auto; }
-  .card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #eaeaea; display: flex; flex-direction: column; transition: transform 0.2s; }
-  .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+  .card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #eaeaea; display: flex; flex-direction: column; }
   .card h3 { color: var(--primary); font-size: 20px; margin-bottom: 10px; }
   .card .price { font-size: 36px; font-weight: 800; color: var(--primary); margin-bottom: 20px; }
-  .card .price span { font-size: 16px; font-weight: 500; color: var(--text-muted); }
   .card ul { list-style: none; margin-bottom: 30px; flex-grow: 1; }
-  .card ul li { margin-bottom: 12px; font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 10px; }
-  .card ul li::before { content: '✓'; color: var(--green); font-weight: bold; }
+  .card ul li { margin-bottom: 12px; font-size: 14px; color: var(--muted); }
+  .card ul li::before { content: '✓'; color: #10b981; font-weight: bold; margin-right: 8px; }
   
-  /* --- Terminal (Скрыт по умолчанию) --- */
-  #terminal-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0a; color: white; z-index: 1000; flex-direction: column; padding: 20px; }
-  .term-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-  .chart-box { flex-grow: 1; background: #1c1c1e; border-radius: 12px; position: relative; overflow: hidden; margin-bottom: 20px; min-height: 300px; }
-  canvas { width: 100%; height: 100%; display: block; }
-  .term-stats { display: flex; justify-content: space-between; background: #1c1c1e; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
-  .term-stat { display: flex; flex-direction: column; gap: 5px; }
-  .term-stat-lbl { font-size: 12px; color: #8e8e93; }
-  .term-stat-val { font-size: 18px; font-weight: bold; }
-  .trade-panel { display: flex; gap: 10px; }
-  .trade-btn { flex: 1; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; color: white; cursor: pointer; }
-  .btn-long { background: var(--green); }
-  .btn-short { background: var(--red); }
-  
-  #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.9); color: black; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; opacity: 0; transition: 0.3s; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-
-  @media (max-width: 768px) {
-    .hero { flex-direction: column; padding: 40px 20px; text-align: center; }
-    .hero-text h1 { font-size: 36px; }
-    .hero-buttons { justify-content: center; }
-    .nav-links { display: none; }
-    .header { padding: 15px 20px; }
-  }
+  /* Панель управления */
+  .my-accounts { max-width: 1200px; margin: 0 auto; padding: 20px 40px; background: #fff; border-radius: 12px; margin-top: 20px; border: 1px solid #eaeaea; }
+  .account-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #eaeaea; }
+  .account-item:last-child { border-bottom: none; }
 </style>
 </head>
 <body>
-<div id="toast"></div>
 
-<!-- HEADER -->
 <div class="header">
   <div class="logo">⚡ FundingPips</div>
-  <div class="nav-links">
-    <span>Products</span>
-    <span>Labs</span>
-    <span>Rewards</span>
-    <span>FAQs</span>
-  </div>
   <div class="header-actions">
-    <span style="font-size: 14px; font-weight: 500; cursor: pointer; color: var(--primary);">Sign In</span>
-    <button class="btn btn-primary" onclick="scrollToPricing()">Buy Challenge</button>
+    <a href="terminal.html" class="btn btn-primary">Перейти в Терминал →</a>
   </div>
 </div>
 
-<!-- HERO SECTION -->
 <div class="hero">
   <div class="hero-text">
     <h1>Turn your trading skills into income</h1>
-    <p>Join over 3,000,000 traders in the world's leading firm. Trade in a fully simulated environment and earn up to 100% rewards.</p>
-    <div class="hero-buttons">
-      <button class="btn btn-primary" onclick="scrollToPricing()">Buy Evaluation</button>
-      <button class="btn btn-outline" onclick="showToast('Симуляция: пробный период недоступен')">Free Trial</button>
-    </div>
+    <p>Join over 3,000,000 traders. Trade in a fully simulated environment.</p>
   </div>
   <div class="hero-image">
     <div class="bottle-mockup"></div>
   </div>
 </div>
 
-<!-- PRICING SECTION -->
 <div class="pricing" id="pricing-section">
   <div class="pricing-header">
     <h2>Choose your Challenge</h2>
-    <p>Start your trading journey today</p>
+    <p>Все счета сохраняются в вашем браузере</p>
   </div>
   
   <div class="cards-grid">
-    <!-- 10k -->
     <div class="card">
       <h3>$10,000 Account</h3>
-      <div class="price">$99 <span>/ evaluation</span></div>
-      <ul>
-        <li>Profit Target: 8%</li>
-        <li>Max Daily Loss: 5%</li>
-        <li>Max Total Loss: 10%</li>
-        <li>Phase 1 & Phase 2</li>
-      </ul>
-      <button class="btn btn-primary" onclick="buyProp(10000)">Start $10k Challenge</button>
+      <div class="price">$99</div>
+      <ul><li>Profit Target: 8%</li><li>Max Loss: 10%</li></ul>
+      <button class="btn btn-primary" onclick="buyAccount(10000)">Купить $10k</button>
     </div>
-
-    <!-- 50k -->
-    <div class="card" style="border: 2px solid var(--primary); transform: scale(1.02);">
-      <h3 style="color: var(--primary);">$50,000 Account</h3>
-      <div class="price">$299 <span>/ evaluation</span></div>
-      <ul>
-        <li>Profit Target: 8%</li>
-        <li>Max Daily Loss: 5%</li>
-        <li>Max Total Loss: 10%</li>
-        <li>Phase 1 & Phase 2</li>
-      </ul>
-      <button class="btn btn-primary" onclick="buyProp(50000)">Start $50k Challenge</button>
+    <div class="card" style="border: 2px solid var(--primary);">
+      <h3>$50,000 Account</h3>
+      <div class="price">$299</div>
+      <ul><li>Profit Target: 8%</li><li>Max Loss: 10%</li></ul>
+      <button class="btn btn-primary" onclick="buyAccount(50000)">Купить $50k</button>
     </div>
-
-    <!-- 100k -->
     <div class="card">
       <h3>$100,000 Account</h3>
-      <div class="price">$499 <span>/ evaluation</span></div>
-      <ul>
-        <li>Profit Target: 8%</li>
-        <li>Max Daily Loss: 5%</li>
-        <li>Max Total Loss: 10%</li>
-        <li>Phase 1 & Phase 2</li>
-      </ul>
-      <button class="btn btn-primary" onclick="buyProp(100000)">Start $100k Challenge</button>
+      <div class="price">$499</div>
+      <ul><li>Profit Target: 8%</li><li>Max Loss: 10%</li></ul>
+      <button class="btn btn-primary" onclick="buyAccount(100000)">Купить $100k</button>
     </div>
   </div>
-</div>
 
-<!-- TERMINAL VIEW (Открывается поверх сайта) -->
-<div id="terminal-view">
-  <div class="term-header">
-    <button class="btn btn-outline" style="color: white; border-color: #333;" onclick="closeTerminal()">← Exit Terminal</button>
-    <div style="font-weight: bold;" id="term-title">Account: $0</div>
-  </div>
-  
-  <div class="chart-box">
-    <canvas id="cv"></canvas>
-  </div>
-  
-  <div class="term-stats">
-    <div class="term-stat">
-      <span class="term-stat-lbl">Balance</span>
-      <span class="term-stat-val" id="acc-balance">$0</span>
-    </div>
-    <div class="term-stat">
-      <span class="term-stat-lbl">PnL</span>
-      <span class="term-stat-val" id="acc-pnl" style="color:#8e8e93;">0%</span>
-    </div>
-  </div>
-  
-  <div class="trade-panel">
-    <button class="trade-btn btn-long" onclick="trade('buy')">BUY / LONG</button>
-    <button class="trade-btn btn-short" onclick="trade('sell')">SELL / SHORT</button>
+  <div class="my-accounts" id="my-accounts-list">
+    <!-- Сюда будут добавляться купленные счета -->
   </div>
 </div>
 
 <script>
-  // --- Game State ---
-  let state = {
-    view: 'site', 
-    activeAccount: null, 
-    price: 100.00,
-    history: Array(40).fill(100.00),
-    position: null, 
-    accountBalance: 0,
-    initialAccountBalance: 0
-  };
-
-  function scrollToPricing() {
-    document.getElementById('pricing-section').scrollIntoView({ behavior: 'smooth' });
-  }
-
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.innerText = msg;
-    t.style.opacity = '1';
-    setTimeout(() => t.style.opacity = '0', 2000);
-  }
-
-  // --- Trading Logic ---
-  function buyProp(accountSize) {
-    state.activeAccount = accountSize;
-    state.accountBalance = accountSize;
-    state.initialAccountBalance = accountSize;
-    state.position = null;
-    state.price = 100.00;
-    state.history = Array(40).fill(100.00);
-    state.view = 'terminal';
+  // Загрузка купленных счетов из памяти
+  function loadAccounts() {
+    const accounts = JSON.parse(localStorage.getItem('my_prop_accounts')) || [];
+    const list = document.getElementById('my-accounts-list');
     
-    document.getElementById('terminal-view').style.display = 'flex';
-    document.getElementById('term-title').innerText = `Account: $${accountSize.toLocaleString()}`;
-    
-    resizeCanvas();
-    updateTerminalUI();
-    showToast(`Куплен счет на $${accountSize.toLocaleString()}`);
-  }
-
-  function closeTerminal() {
-    state.view = 'site';
-    state.position = null;
-    document.getElementById('terminal-view').style.display = 'none';
-  }
-
-  function updateTerminalUI() {
-    document.getElementById('acc-balance').innerText = `$${state.accountBalance.toFixed(2)}`;
-    
-    const pnlPercent = ((state.accountBalance - state.initialAccountBalance) / state.initialAccountBalance) * 100;
-    const pnlEl = document.getElementById('acc-pnl');
-    pnlEl.innerText = (pnlPercent > 0 ? '+' : '') + pnlPercent.toFixed(2) + '%';
-    pnlEl.style.color = pnlPercent > 0 ? '#10b981' : pnlPercent < 0 ? '#ef4444' : '#8e8e93';
-  }
-
-  function trade(type) {
-    if (state.position) {
-      // Закрываем
-      let pnl = state.position.type === 'buy' 
-        ? (state.price - state.position.entry) * state.position.size 
-        : (state.position.entry - state.price) * state.position.size;
-      
-      state.accountBalance += pnl;
-      state.accountBalance -= Math.abs(pnl) * 0.05; // Комиссия 5%
-
-      showToast(`Closed. PnL: $${pnl.toFixed(2)}`);
-      state.position = null;
-    } else {
-      // Открываем (Риск 1% от счета)
-      const riskAmount = state.activeAccount * 0.01; 
-      const size = riskAmount / 1.0; 
-      state.position = { type, entry: state.price, size };
-      showToast(`Opened ${type.toUpperCase()}`);
+    if (accounts.length === 0) {
+      list.innerHTML = '<p style="color: #666; text-align: center;">У вас пока нет купленных счетов.</p>';
+      return;
     }
-    updateTerminalUI();
-  }
 
-  // --- Chart Engine ---
-  const cv = document.getElementById('cv');
-  const ctx = cv.getContext('2d');
-
-  function resizeCanvas() {
-    if(!cv.parentElement) return;
-    cv.width = cv.parentElement.clientWidth;
-    cv.height = cv.parentElement.clientHeight;
-    drawChart();
-  }
-  window.addEventListener('resize', resizeCanvas);
-
-  setInterval(() => {
-    if (state.view !== 'terminal') return;
-
-    const change = (Math.random() - 0.5) * 2; 
-    state.price = Math.max(1, state.price + change);
-    state.history.push(state.price);
-    if (state.history.length > 40) state.history.shift();
-
-    if (state.position) updateTerminalUI();
-    drawChart();
-  }, 1000);
-
-  function drawChart() {
-    if (!ctx) return;
-    ctx.clearRect(0, 0, cv.width, cv.height);
-    const mx = Math.max(...state.history), mn = Math.min(...state.history);
-    const rng = mx - mn || 1;
-    
-    ctx.beginPath();
-    ctx.strokeStyle = state.position ? (state.position.type === 'buy' ? '#10b981' : '#ef4444') : '#0a84ff';
-    ctx.lineWidth = 2;
-
-    state.history.forEach((p, i) => {
-      const x = (i / (state.history.length - 1)) * cv.width;
-      const y = cv.height - ((p - mn) / rng) * cv.height;
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    list.innerHTML = '<h3 style="margin-bottom: 15px; color: var(--primary);">Ваши счета:</h3>';
+    accounts.forEach((acc, index) => {
+      list.innerHTML += `
+        <div class="account-item">
+          <div>
+            <strong>Счет на $${acc.size.toLocaleString()}</strong><br>
+            <span style="font-size: 12px; color: #666;">Баланс: $${acc.currentBalance.toFixed(2)}</span>
+          </div>
+          <a href="terminal.html" class="btn btn-primary" style="padding: 5px 15px; font-size: 12px;">Торговать</a>
+        </div>
+      `;
     });
-    ctx.stroke();
-
-    // Заливка
-    ctx.lineTo(cv.width, cv.height); ctx.lineTo(0, cv.height); ctx.closePath();
-    const g = ctx.createLinearGradient(0, 0, 0, cv.height);
-    g.addColorStop(0, state.position ? 'rgba(16,185,129,0.2)' : 'rgba(10,132,255,0.2)');
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g; ctx.fill();
   }
 
-  // Init
-  resizeCanvas();
+  // Покупка нового счета
+  function buyAccount(size) {
+    let accounts = JSON.parse(localStorage.getItem('my_prop_accounts')) || [];
+    
+    // Создаем объект нового счета
+    const newAccount = {
+      id: Date.now(),
+      size: size,
+      initialBalance: size,
+      currentBalance: size
+    };
+
+    accounts.push(newAccount);
+    localStorage.setItem('my_prop_accounts', JSON.stringify(accounts));
+    
+    alert(`Вы успешно купили счет на $${size.toLocaleString()}!`);
+    loadAccounts(); // Обновляем список на экране
+  }
+
+  // Запуск при открытии страницы
+  loadAccounts();
 </script>
 </body>
 </html>
