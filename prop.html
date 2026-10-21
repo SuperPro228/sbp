@@ -5,49 +5,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FundingPips Shop</title>
 <style>
-  :root { --primary: #0b1f4d; --primary-hover: #153270; --bg: #f8f9fa; --card: #ffffff; --text: #1a1a1a; --muted: #666; --green: #10b981; --red: #ef4444; }
+  :root { --primary: #0b1f4d; --primary-hover: #153270; --bg: #f4f7fb; --card: #ffffff; --text: #1a1a1a; --muted: #666; --green: #10b981; }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   body { background: var(--bg); color: var(--text); }
   
   /* Header */
   .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: #fff; border-bottom: 1px solid #eaeaea; position: sticky; top: 0; z-index: 100; }
-  .logo { font-weight: 800; font-size: 20px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+  .logo { font-weight: 800; font-size: 20px; color: var(--primary); }
   .header-right { display: flex; align-items: center; gap: 20px; }
   .wallet-balance { background: #eef2ff; color: var(--primary); padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px; }
   
   /* Hero */
-  .hero { text-align: center; padding: 60px 20px; background: linear-gradient(180deg, #fff 0%, var(--bg) 100%); }
-  .hero h1 { font-size: 42px; color: var(--primary); margin-bottom: 15px; letter-spacing: -1px; }
+  .hero { text-align: center; padding: 60px 20px; background: #fff; }
+  .hero h1 { font-size: 42px; color: var(--primary); margin-bottom: 15px; }
   .hero p { color: var(--muted); font-size: 18px; }
 
-  /* Pricing */
-  .container { max-width: 1200px; margin: 0 auto; padding: 0 20px 60px; }
-  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-bottom: 50px; }
-  .card { background: var(--card); border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #eaeaea; display: flex; flex-direction: column; transition: 0.2s; position: relative; }
-  .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-  .card.popular { border: 2px solid var(--primary); }
-  .card.popular::before { content: 'Популярный'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+  /* Cards */
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+  .card { background: var(--card); border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #eaeaea; display: flex; flex-direction: column; }
   .card h3 { font-size: 18px; color: var(--muted); margin-bottom: 10px; }
   .card .price { font-size: 40px; font-weight: 800; color: var(--primary); margin-bottom: 20px; }
   .card ul { list-style: none; margin-bottom: 30px; flex-grow: 1; }
-  .card ul li { margin-bottom: 12px; font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
-  .card ul li::before { content: '✓'; color: var(--green); font-weight: bold; }
+  .card ul li { margin-bottom: 12px; font-size: 14px; color: var(--muted); }
+  .card ul li::before { content: '✓'; color: var(--green); font-weight: bold; margin-right: 8px; }
   
   .btn { padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: 0.2s; text-align: center; }
   .btn-primary { background: var(--primary); color: white; width: 100%; }
   .btn-primary:hover { background: var(--primary-hover); }
-  .btn-logout { background: transparent; color: var(--muted); border: none; cursor: pointer; font-size: 14px; text-decoration: underline; }
+  .btn-logout { background: transparent; color: var(--muted); border: none; cursor: pointer; text-decoration: underline; }
 
-  /* Мои счета */
-  .my-accounts { background: var(--card); border-radius: 16px; padding: 30px; border: 1px solid #eaeaea; display: none; }
+  /* Accounts list */
+  .my-accounts { background: #fff; border-radius: 16px; padding: 30px; border: 1px solid #eaeaea; margin-top: 40px; display: none; }
   .my-accounts h3 { margin-bottom: 20px; color: var(--primary); }
   .account-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
   .account-row:last-child { border-bottom: none; }
   .acc-info b { display: block; font-size: 16px; margin-bottom: 4px; }
   .acc-info span { font-size: 12px; color: var(--muted); }
-  .btn-sm { padding: 8px 16px; font-size: 12px; }
+  .btn-sm { padding: 8px 16px; font-size: 12px; width: auto; text-decoration: none; }
 
-  /* Модалка */
+  /* Modal */
   .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
   .modal.active { display: flex; }
   .modal-content { background: #1c1c1e; padding: 30px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; }
@@ -74,37 +71,22 @@
 
 <div class="container">
   <div class="cards-grid">
-    <!-- 10k -->
     <div class="card">
       <h3>Evaluation Account</h3>
       <div class="price">10 000 ₽</div>
-      <ul>
-        <li>Размер счета: $10,000</li>
-        <li>Цель по прибыли: 8%</li>
-        <li>Макс. просадка: 10%</li>
-      </ul>
+      <ul><li>Размер счета: $10,000</li><li>Цель: 8%</li><li>Просадка: 10%</li></ul>
       <button class="btn btn-primary" onclick="buyAccount(10000, 10000)">Купить $10k</button>
     </div>
-    <!-- 50k -->
-    <div class="card popular">
+    <div class="card">
       <h3>Evaluation Account</h3>
       <div class="price">25 000 ₽</div>
-      <ul>
-        <li>Размер счета: $50,000</li>
-        <li>Цель по прибыли: 8%</li>
-        <li>Макс. просадка: 10%</li>
-      </ul>
+      <ul><li>Размер счета: $50,000</li><li>Цель: 8%</li><li>Просадка: 10%</li></ul>
       <button class="btn btn-primary" onclick="buyAccount(25000, 50000)">Купить $50k</button>
     </div>
-    <!-- 100k -->
     <div class="card">
       <h3>Evaluation Account</h3>
       <div class="price">50 000 ₽</div>
-      <ul>
-        <li>Размер счета: $100,000</li>
-        <li>Цель по прибыли: 8%</li>
-        <li>Макс. просадка: 10%</li>
-      </ul>
+      <ul><li>Размер счета: $100,000</li><li>Цель: 8%</li><li>Просадка: 10%</li></ul>
       <button class="btn btn-primary" onclick="buyAccount(50000, 100000)">Купить $100k</button>
     </div>
   </div>
@@ -115,18 +97,16 @@
   </div>
 </div>
 
-<!-- Модалка входа -->
 <div class="modal" id="login-modal">
   <div class="modal-content">
     <h2>Вход в систему</h2>
-    <input type="text" id="login-name" placeholder="Ваше имя (любое)">
+    <input type="text" id="login-name" placeholder="Ваше имя">
     <button onclick="login()">Продолжить</button>
   </div>
 </div>
 
 <script>
-  // --- 1. Инициализация и баланс ---
-  // Если баланса нет, выдаем стартовые 13 736 ₽ (как на твоем скрине)
+  // Стартовый баланс
   if (!localStorage.getItem('wallet_balance')) {
     localStorage.setItem('wallet_balance', '13736');
   }
@@ -134,7 +114,6 @@
   function updateHeader() {
     const session = JSON.parse(localStorage.getItem('user_session'));
     const balance = parseInt(localStorage.getItem('wallet_balance'));
-    
     document.getElementById('wallet-display').innerText = `Баланс: ${balance.toLocaleString('ru-RU')} ₽`;
 
     if (session) {
@@ -149,38 +128,30 @@
     }
   }
 
-  // --- 2. Логика входа ---
   function openModal() { document.getElementById('login-modal').classList.add('active'); }
-  
   function login() {
     const name = document.getElementById('login-name').value.trim() || "Trader";
     localStorage.setItem('user_session', JSON.stringify({ name }));
     document.getElementById('login-modal').classList.remove('active');
     updateHeader();
   }
-
   function logout() {
     localStorage.removeItem('user_session');
     updateHeader();
   }
 
-  // --- 3. Логика покупки ---
   function buyAccount(priceRub, accountSize) {
-    const session = localStorage.getItem('user_session');
-    if (!session) { alert("Сначала войдите в систему!"); openModal(); return; }
+    if (!localStorage.getItem('user_session')) { alert("Сначала войдите!"); openModal(); return; }
 
     let balance = parseInt(localStorage.getItem('wallet_balance'));
-    
     if (balance < priceRub) {
-      alert(`Недостаточно средств! На вашем балансе ${balance} ₽, а счет стоит ${priceRub} ₽.`);
+      alert(`Недостаточно средств! У вас ${balance} ₽, нужно ${priceRub} ₽.`);
       return;
     }
 
-    // Списываем деньги
     balance -= priceRub;
     localStorage.setItem('wallet_balance', balance);
 
-    // Создаем счет
     let accounts = JSON.parse(localStorage.getItem('my_prop_accounts')) || [];
     accounts.push({
       id: 'acc_' + Date.now(),
@@ -190,36 +161,30 @@
     });
     localStorage.setItem('my_prop_accounts', JSON.stringify(accounts));
 
-    alert(`Успешно! Вы купили счет на $${accountSize.toLocaleString()}. Остаток на карте: ${balance} ₽`);
-    
-    updateHeader(); // Обновляем баланс в шапке и список
+    alert(`Успешно! Куплен счет на $${accountSize.toLocaleString()}. Осталось: ${balance} ₽`);
+    updateHeader();
   }
 
-  // --- 4. Список счетов ---
   function loadAccounts() {
     const accounts = JSON.parse(localStorage.getItem('my_prop_accounts')) || [];
     const list = document.getElementById('accounts-list');
-    
     if (accounts.length === 0) {
-      list.innerHTML = '<p style="color: var(--muted);">У вас пока нет купленных счетов.</p>';
+      list.innerHTML = '<p style="color: var(--muted);">Счетов нет.</p>';
       return;
     }
-
     list.innerHTML = '';
     accounts.forEach(acc => {
       list.innerHTML += `
         <div class="account-row">
           <div class="acc-info">
             <b>Счет на $${acc.size.toLocaleString()}</b>
-            <span>Текущий баланс: $${acc.currentBalance.toFixed(2)}</span>
+            <span>Баланс: $${acc.currentBalance.toFixed(2)}</span>
           </div>
-          <a href="terminal.html?id=${acc.id}" class="btn btn-primary btn-sm" style="text-decoration:none; width:auto;">Торговать</a>
+          <a href="terminal.html?id=${acc.id}" class="btn btn-primary btn-sm">Торговать</a>
         </div>
       `;
     });
   }
-
-  // Запуск
   updateHeader();
 </script>
 </body>
