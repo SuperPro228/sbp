@@ -2,161 +2,158 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Trading Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Перевод - Wallet</title>
     <style>
-        :root {
-            --bg: #0b0e11; --panel: #1e2329; --text: #eaecef; --muted: #848e9c;
-            --green: #0ecb81; --red: #f6465d; --blue: #2962ff;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif; user-select: none; }
-        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; height: 100vh; overflow: hidden; }
-        .app { width: 100%; max-width: 500px; display: flex; flex-direction: column; border-left: 1px solid #2b3139; border-right: 1px solid #2b3139; position: relative; }
-
-        /* Header */
-        .hdr { display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #2b3139; align-items: center; background: var(--bg); z-index: 10; }
-        .back-btn { color: var(--blue); text-decoration: none; font-size: 15px; font-weight: 600; }
-        .wallet { background: var(--panel); padding: 5px 10px; border-radius: 15px; font-size: 13px; font-weight: bold; color: var(--blue); }
-
-        /* Кнопка перехода на реальный TradingView */
-        .open-tv-btn {
-            display: block; background: #2962ff; color: white; text-align: center;
-            padding: 12px; margin: 10px 15px; border-radius: 8px; text-decoration: none;
-            font-weight: bold; font-size: 14px;
-        }
-        .open-tv-btn:active { background: #1e4bd8; }
-
-        /* Контейнер для виджета TradingView */
-        .tv-widget-container { flex-grow: 1; padding: 0 15px; position: relative; }
-        .tradingview-widget-container { height: 100%; width: 100%; }
-
-        /* Панель управления */
-        .panel { padding: 15px; display: flex; flex-direction: column; gap: 12px; background: var(--bg); }
-        .input-box { display: flex; background: var(--panel); border-radius: 10px; padding: 10px 15px; align-items: center; }
-        .input-box input { background: none; border: none; color: var(--text); font-size: 20px; font-weight: bold; width: 100%; outline: none; }
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; text-align: center; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; }
+        .cancel { color: #007aff; text-decoration: none; font-size: 17px; }
+        h1 { font-size: 32px; margin: 20px 0; }
         
-        .pcts { display: flex; gap: 10px; margin-bottom: 5px; }
-        .pct-btn { flex: 1; background: var(--panel); border: none; color: var(--text); padding: 8px 0; border-radius: 5px; font-size: 12px; cursor: pointer; }
-
-        .exec-btn { padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
-        .ex-buy { background: var(--green); }
-        .ex-sell { background: var(--red); }
-
-        #toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 10px 20px; border-radius: 5px; font-size: 14px; opacity: 0; transition: .3s; z-index: 200; pointer-events: none; text-align: center; width: 80%; border-left: 4px solid var(--blue); }
+        .input-group { background: #1c1c1e; border-radius: 14px; padding: 10px 15px; margin-top: 30px; text-align: left; }
+        label { color: #8e8e93; font-size: 13px; text-transform: uppercase; margin-left: 5px; }
+        input { 
+            width: 100%; background: none; border: none; color: #fff; 
+            padding: 12px 0; font-size: 24px; outline: none; font-weight: 600;
+        }
+        
+        .btn-send { 
+            background: #fff; color: #000; border: none; width: 100%; 
+            padding: 18px; border-radius: 14px; font-size: 17px; 
+            font-weight: 600; margin-top: 40px; cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-send:active { transform: scale(0.97); }
+        .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
-<div class="app">
-    <div id="toast"></div>
 
-    <div class="hdr">
-        <a href="apple_pay.html" class="back-btn">‹ Назад</a>
-        <div class="wallet">💰 <span id="rub-balance">0</span> ₽</div>
+    <div class="header">
+        <a href="apple_pay.html" class="cancel" onclick="playSound('click')">Отмена</a>
     </div>
 
-    <!-- Ссылка на настоящий TradingView -->
-    <a href="https://ru.tradingview.com/chart/" target="_blank" class="open-tv-btn">
-        🌐 Открыть TradingView на весь экран
-    </a>
+    <h1>Перевод</h1>
+    <p id="targetInfo" style="color: #8e8e93;">Загрузка данных...</p>
 
-    <!-- Официальный виджет TradingView -->
-    <div class="tv-widget-container">
-        <div class="tradingview-widget-container">
-            <div id="tradingview_widget"></div>
-        </div>
+    <div class="input-group">
+        <label>Сумма перевода</label>
+        <input type="number" id="amountInput" placeholder="0 ₽" autofocus>
     </div>
 
-    <!-- Панель управления -->
-    <div class="panel">
-        <div class="input-box">
-            <input type="number" id="amt" placeholder="Сумма в ₽" step="100">
-            <span style="color:var(--muted)">₽</span>
-        </div>
-        
-        <div class="pcts">
-            <button class="pct-btn" onclick="setPct(25)">25%</button>
-            <button class="pct-btn" onclick="setPct(50)">50%</button>
-            <button class="pct-btn" onclick="setPct(100)">MAX</button>
-        </div>
+    <button class="btn-send" id="sendBtn" onclick="sendMoney()">Отправить</button>
 
-        <div style="display: flex; gap: 10px;">
-            <button class="exec-btn ex-buy" style="flex:1" onclick="trade('buy')">Купить</button>
-            <button class="exec-btn ex-sell" style="flex:1" onclick="trade('sell')">Продать</button>
-        </div>
-    </div>
-</div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        // ТВОЯ НОВАЯ БАЗА ДАННЫХ (Европа)
+        const firebaseConfig = { databaseURL: "https://dsadasdas-25283-default-rtdb.europe-west1.firebasedatabase.app/" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script>
-    // ТВОЯ НОВАЯ БАЗА ДАННЫХ (Европа)
-    const firebaseConfig = { databaseURL: "https://dsadasdas-25283-default-rtdb.europe-west1.firebasedatabase.app/" };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const user = localStorage.getItem('walletUser');
+        const myUser = localStorage.getItem('walletUser');
+        const urlParams = new URLSearchParams(window.location.search);
+        let targetUser = urlParams.get('target');
 
-    if (!user) window.location.href = 'index.html';
-
-    let currentBalance = 0;
-
-    // Слушаем баланс
-    db.ref('users/' + user + '/balance').on('value', snap => {
-        currentBalance = snap.val() || 0;
-        document.getElementById('rub-balance').innerText = currentBalance.toLocaleString();
-    });
-
-    // Инициализация виджета TradingView
-    function initTradingView() {
-        new TradingView.widget({
-            "autosize": true,
-            "symbol": "BINANCE:SOLUSDT",
-            "interval": "15",
-            "timezone": "Etc/UTC",
-            "theme": "dark",
-            "style": "1",
-            "locale": "ru",
-            "toolbar_bg": "#f1f3f6",
-            "enable_publishing": false,
-            "allow_symbol_change": true,
-            "container_id": "tradingview_widget"
-        });
-    }
-    
-    // Подключаем скрипт TradingView и запускаем виджет
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/tv.js';
-    script.onload = initTradingView;
-    document.head.appendChild(script);
-
-    // Расчет процентов
-    function setPct(p) {
-        const amtInput = document.getElementById('amt');
-        amtInput.value = Math.floor(currentBalance * (p / 100));
-    }
-
-    // Торговля (симулятор)
-    async function trade(mode) {
-        const amt = parseFloat(document.getElementById('amt').value);
-        if (isNaN(amt) || amt <= 0) return toast('Введите сумму', 'var(--red)');
-
-        if (mode === 'buy') {
-            if (amt > currentBalance) return toast('Недостаточно средств', 'var(--red)');
-            currentBalance -= amt;
-            toast(`Куплено на ${amt.toLocaleString()} ₽`, 'var(--green)');
-        } else {
-            currentBalance += amt;
-            toast(`Продано на ${amt.toLocaleString()} ₽`, 'var(--green)');
+        // Очистка ника если он пришел с префиксом
+        if (targetUser && targetUser.startsWith('USER:')) {
+            targetUser = targetUser.split('USER:')[1];
         }
 
-        await db.ref('users/' + user).update({ balance: currentBalance });
-        document.getElementById('amt').value = '';
-    }
+        if (!myUser) window.location.href = 'index.html';
+        if (!targetUser) {
+            alert("Получатель не указан");
+            window.location.href = 'apple_pay.html';
+        }
 
-    function toast(msg, clr) {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.style.borderLeft = '4px solid ' + clr; t.style.opacity = '1';
-        setTimeout(() => t.style.opacity = '0', 2500);
-    }
-</script>
+        document.getElementById('targetInfo').innerText = `Кому: @${targetUser}`;
+
+        // --- ФУНКЦИЯ ВОСПРОИЗВЕДЕНИЯ ЗВУКОВ ---
+        function playSound(soundName) {
+            try {
+                const audio = new Audio(soundName + '.mp3');
+                audio.volume = 0.5;
+                audio.play().catch(e => console.log('Звук заблокирован', e));
+            } catch (e) {}
+        }
+
+        async function sendMoney() {
+            const amount = parseFloat(document.getElementById('amountInput').value);
+            const btn = document.getElementById('sendBtn');
+
+            if (!amount || amount <= 0) {
+                playSound('error');
+                return alert("Введите корректную сумму");
+            }
+            if (myUser === targetUser) {
+                playSound('error');
+                return alert("Нельзя переводить самому себе");
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Отправка...";
+
+            try {
+                const myRef = db.ref('users/' + myUser);
+                const targetRef = db.ref('users/' + targetUser);
+
+                const mySnap = await myRef.once('value');
+                const targetSnap = await targetRef.once('value');
+
+                if (!targetSnap.exists()) {
+                    playSound('error');
+                    alert("Пользователь не найден");
+                    btn.disabled = false;
+                    btn.innerText = "Отправить";
+                    return;
+                }
+
+                const myBalance = mySnap.val().balance || 0;
+                if (myBalance < amount) {
+                    playSound('error');
+                    alert("Недостаточно средств на Apple Cash");
+                    btn.disabled = false;
+                    btn.innerText = "Отправить";
+                    return;
+                }
+
+                const targetBalance = targetSnap.val().balance || 0;
+
+                // 1. Обновляем балансы
+                await myRef.update({ balance: myBalance - amount });
+                await targetRef.update({ balance: targetBalance + amount });
+
+                // 2. ЗАПИСЬ В ИСТОРИЮ ОТПРАВИТЕЛЯ
+                await db.ref('users/' + myUser + '/history').push({
+                    title: `Перевод @${targetUser}`,
+                    amount: amount,
+                    type: "expense",
+                    timestamp: Date.now()
+                });
+
+                // 3. ЗАПИСЬ В ИСТОРИЮ ПОЛУЧАТЕЛЯ
+                await db.ref('users/' + targetUser + '/history').push({
+                    title: `От @${myUser}`,
+                    amount: amount,
+                    type: "income",
+                    timestamp: Date.now()
+                });
+
+                // Звук успеха и переход
+                playSound('success');
+                setTimeout(() => {
+                    alert("Перевод выполнен успешно!");
+                    window.location.href = 'apple_pay.html';
+                }, 300);
+
+            } catch (e) {
+                console.error(e);
+                playSound('error');
+                alert("Ошибка сети при переводе");
+                btn.disabled = false;
+                btn.innerText = "Отправить";
+            }
+        }
+    </script>
 </body>
 </html>
