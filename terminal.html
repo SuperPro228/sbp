@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Axiom Terminal - Meme Coin</title>
+    <style>
+        :root { 
+            --bg: #0b0e11; --panel: #1e2329; --text: #eaecef; --muted: #848e9c; 
+            --green: #0ecb81; --red: #f6465d; --blue: #2962ff; 
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif; user-select: none; }
+        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        .app { width: 100%; max-width: 450px; display: flex; flex-direction: column; border-left: 1px solid #2b3139; border-right: 1px solid #2b3139; position: relative; }
+        
+        .hdr { display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #2b3139; align-items: center; }
+        .back-btn { color: var(--blue); text-decoration: none; font-size: 15px; }
+        .wallet { background: var(--panel); padding: 5px 10px; border-radius: 15px; font-size: 14px; font-weight: bold; color: var(--blue); }
+        
+        .tok-hdr { display: flex; align-items: center; padding: 10px 15px; gap: 10px; }
+        .tok-ico { width: 40px; height: 40px; background: var(--blue); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; }
+        .tok-nm { font-weight: bold; font-size: 16px; }
+        .tok-mc { font-size: 12px; color: var(--muted); font-weight: normal; }
+        
+        .chart-box { flex-grow: 1; position: relative; border-top: 1px solid #2b3139; border-bottom: 1px solid #2b3139; display: flex; align-items: flex-end; }
+        canvas { width: 100%; height: 100%; display: block; }
+        .price { position: absolute; top: 20px; left: 20px; font-size: 28px; font-weight: bold; z-index: 10; }
+        .up { color: var(--green); } .down { color: var(--red); }
+        
+        .stats { display: flex; justify-content: space-between; padding: 10px 15px; background: var(--panel); font-size: 12px; color: var(--muted); }
+        .stat-v { color: var(--text); font-weight: bold; font-size: 14px; display: block; margin-top: 2px; }
+        
+        .panel { padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+        .toggle { display: flex; background: var(--panel); border-radius: 10px; overflow: hidden; }
+        .t-btn { flex: 1; padding: 12px; text-align: center; font-weight: bold; cursor: pointer; color: var(--muted); }
+        .t-buy { background: rgba(14,203,129,.1); color: var(--green); border-bottom: 2px solid var(--green); }
+        .t-sell { background: rgba(246,70,93,.1); color: var(--red); border-bottom: 2px solid var(--red); }
+        
+        .input-box { display: flex; background: var(--panel); border-radius: 10px; padding: 10px 15px; align-items: center; }
+        .input-box input { background: none; border: none; color: var(--text); font-size: 20px; font-weight: bold; width: 100%; outline: none; }
+        
+        .pcts { display: flex; gap: 10px; }
+        .pct-btn { flex: 1; background: var(--panel); border: none; color: var(--text); padding: 8px 0; border-radius: 5px; font-size: 12px; cursor: pointer; }
+        
+        .exec-btn { padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        .ex-buy { background: var(--green); } .ex-sell { background: var(--red); }
+        .exec-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        #toast { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 10px 20px; border-radius: 5px; font-size: 14px; opacity: 0; transition: .3s; z-index: 200; pointer-events: none; text-align: center; width: 80%; border-left: 4px solid var(--blue); }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div id="toast"></div>
+    <div class="hdr">
+        <a href="apple_pay.html" class="back-btn">‹ Назад в Wallet</a>
+        <div class="wallet">💰 <span id="sol">0.00</span> SOL</div>
+    </div>
+    <div class="tok-hdr">
+        <div class="tok-ico">M</div>
+        <div class="tok-nm">MISTER LIAR<span class="tok-mc" id="rub-balance">Баланс: 0 ₽</span></div>
+    </div>
+    
+    <div class="chart-box">
+        <canvas id="cv"></canvas>
+        <div class="price" id="price">$0.00337</div>
+    </div>
+    
+    <div class="stats">
+        <div>Токены<span class="stat-v" id="tkn">0</span></div>
+        <div>Ср. цена<span class="stat-v" id="avg">$0.00</span></div>
+        <div>PnL<span class="stat-v" id="pnl" style="color:var(--muted)">0%</span></div>
+    </div>
+    
+    <div class="panel">
+        <div class="toggle">
+            <div class="t-btn t-buy" id="t-buy" onclick="setMode('buy')">Buy</div>
+            <div class="t-btn" id="t-sell" onclick="setMode('sell')">Sell</div>
+        </div>
+        <div class="input-box">
+            <input type="number" id="amt" placeholder="0.0" step="0.001"><span style="color:var(--muted)">SOL</span>
+        </div>
+        <div class="pcts">
+            <button class="pct-btn" onclick="setPct(10)">10%</button>
+            <button class="pct-btn" onclick="setPct(25)">25%</button>
+            <button class="pct-btn" onclick="setPct(50)">50%</button>
+            <button class="pct-btn" onclick="setPct(100)">100%</button>
+        </div>
+        <button class="exec-btn ex-buy" id="exec" onclick="trade()">Купить</button>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script>
+    const firebaseConfig = { databaseURL: "https://passatpay-c766e-default-rtdb.firebaseio.com/" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const user = localStorage.getItem('walletUser');
+    if (!user) window.location.href = 'index.html';
+
+    const RATE = 15000; 
+    let isProcessing = false;
+
+    // --- ВСТРОЕННЫЙ АУДИО-СИНТЕЗАТОР ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+
+        if (type === 'click') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'buy') {
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        } else if (type === 'sell') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(900, audioCtx.currentTime + 0.08);
+            osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.16);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        }
+    }
+
+    const S = { rubBalance: 0, solBalance: 0, tkn: 0, avg: 0, price: 0.00337, init: 0.00337, mode:'buy', hist: Array(50).fill(0.00337) };
+    const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+    
+    function resize() { cv.width = cv.parentElement.clientWidth; cv.height = cv.parentElement.clientHeight; }
+    window.addEventListener('resize', resize); resize();
+
+    db.ref('users/' + user + '/balance').on('value', snap => {
+        S.rubBalance = snap.val() || 0;
+        S.solBalance = S.rubBalance / RATE;
+        document.getElementById('rub-balance').innerText = `Баланс: ${S.rubBalance.toLocaleString()} ₽`;
+        ui();
+    });
+
+    setInterval(() => {
+        S.price = Math.max(0.00001, S.price + (Math.random() - 0.48) * 0.0002);
+        S.hist.push(S.price); if (S.hist.length > 60) S.hist.shift();
+        ui(); draw();
+    }, 1000);
+
+    function draw() {
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        const mx = Math.max(...S.hist), mn = Math.min(...S.hist), rng = mx - mn || 0.0001;
+        ctx.beginPath(); ctx.strokeStyle = S.price >= S.init ? '#0ecb81' : '#f6465d'; ctx.lineWidth = 2;
+        S.hist.forEach((p, i) => {
+            const x = (i / (S.hist.length - 1)) * cv.width;
+            const y = cv.height - 20 - ((p - mn) / rng) * (cv.height - 40);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.lineTo(cv.width, cv.height); ctx.lineTo(0, cv.height); ctx.closePath();
+        const g = ctx.createLinearGradient(0, 0, 0, cv.height);
+        g.addColorStop(0, S.price >= S.init ? 'rgba(14,203,129,.2)' : 'rgba(246,70,93,.2)');
+        g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fill();
+    }
+
+    function ui() {
+        document.getElementById('sol').innerText = S.solBalance.toFixed(4);
+        const pd = document.getElementById('price');
+        pd.innerText = '$' + S.price.toFixed(5);
+        pd.className = 'price ' + (S.price >= S.init ? 'up' : 'down');
+        document.getElementById('tkn').innerText = S.tkn.toFixed(2);
+        document.getElementById('avg').innerText = S.tkn > 0 ? '$' + S.avg.toFixed(5) : '$0.00';
+        const pnlEl = document.getElementById('pnl');
+        if (S.tkn > 0) {
+            const pct = (((S.tkn * S.price) - (S.tkn * S.avg)) / (S.tkn * S.avg)) * 100;
+            pnlEl.innerText = (pct > 0 ? '+' : '') + pct.toFixed(2) + '%';
+            pnlEl.style.color = pct > 0 ? 'var(--green)' : pct < 0 ? 'var(--red)' : 'var(--muted)';
+        } else { pnlEl.innerText = '0%'; pnlEl.style.color = 'var(--muted)'; }
+    }
+
+    function setMode(m) {
+        playSound('click');
+        S.mode = m;
+        document.getElementById('t-buy').className = 't-btn ' + (m === 'buy' ? 't-buy' : '');
+        document.getElementById('t-sell').className = 't-btn ' + (m === 'sell' ? 't-sell' : '');
+        const btn = document.getElementById('exec');
+        btn.className = 'exec-btn ' + (m === 'buy' ? 'ex-buy' : 'ex-sell');
+        btn.innerText = m === 'buy' ? 'Купить' : 'Продать';
+    }
+
+    function setPct(p) {
+        playSound('click');
+        const inp = document.getElementById('amt');
+        if (S.mode === 'buy') inp.value = (S.solBalance * p / 100).toFixed(4);
+        else inp.value = ((S.tkn * S.price) * p / 100).toFixed(4);
+    }
+
+    function toast(msg, clr) {
+        const t = document.getElementById('toast');
+        t.innerText = msg; t.style.borderLeft = '4px solid ' + clr; t.style.opacity = '1';
+        setTimeout(() => t.style.opacity = '0', 2500);
+    }
+
+    async function trade() {
+        if (isProcessing) return;
+        const amt = parseFloat(document.getElementById('amt').value);
+        if (isNaN(amt) || amt <= 0) return toast('Введите сумму', 'var(--red)');
+        
+        const rubAmount = amt * RATE;
+        isProcessing = true;
+        const btn = document.getElementById('exec');
+        btn.disabled = true;
+
+        if (S.mode === 'buy') {
+            if (rubAmount > S.rubBalance) {
+                toast('Недостаточно рублей на балансе', 'var(--red)');
+                isProcessing = false; btn.disabled = false; return;
+            }
+            const tokensBought = amt / S.price;
+            const currentTotalValue = S.tkn * S.avg;
+            const newTotalValue = currentTotalValue + amt;
+            S.tkn += tokensBought;
+            S.avg = newTotalValue / S.tkn;
+            S.rubBalance -= rubAmount;
+            await db.ref('users/' + user).update({ balance: S.rubBalance });
+            playSound('buy');
+            toast(`Куплено ${tokensBought.toFixed(2)} токенов`, 'var(--green)');
+            document.getElementById('amt').value = '';
+        } else {
+            const tokensToSell = amt / S.price;
+            if (tokensToSell > S.tkn) {
+                toast('Недостаточно токенов', 'var(--red)');
+                isProcessing = false; btn.disabled = false; return;
+            }
+            S.tkn -= tokensToSell;
+            S.rubBalance += rubAmount;
+            if (S.tkn < 0.0001) { S.tkn = 0; S.avg = 0; }
+            await db.ref('users/' + user).update({ balance: S.rubBalance });
+            playSound('sell');
+            toast(`Продано на ${rubAmount.toLocaleString()} ₽`, 'var(--green)');
+            document.getElementById('amt').value = '';
+        }
+        S.solBalance = S.rubBalance / RATE;
+        ui();
+        setTimeout(() => { isProcessing = false; btn.disabled = false; }, 500);
+    }
+
+    ui(); draw();
+</script>
+</body>
+</html>
