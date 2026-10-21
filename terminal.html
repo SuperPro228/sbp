@@ -3,245 +3,371 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Axiom Terminal - TradingView</title>
+    <title>TradingView Terminal & Wallet</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
         :root {
-            --bg: #0b0e11; --panel: #1e2329; --text: #eaecef; --muted: #848e9c;
-            --green: #0ecb81; --red: #f6465d; --blue: #2962ff;
+            --tv-bg: #131722;
+            --tv-panel: #1e222d;
+            --tv-border: #2a2e39;
+            --tv-text: #d1d4dc;
+            --tv-text-muted: #787b86;
+            --tv-blue: #2962ff;
+            --tv-green: #089981;
+            --tv-red: #f23645;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif; user-select: none; }
-        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; height: 100vh; overflow: hidden; }
-        .app { width: 100%; max-width: 500px; display: flex; flex-direction: column; border-left: 1px solid #2b3139; border-right: 1px solid #2b3139; position: relative; }
 
-        /* Header */
-        .hdr { display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #2b3139; align-items: center; background: var(--bg); z-index: 10; }
-        .back-btn { color: var(--blue); text-decoration: none; font-size: 15px; font-weight: 600; }
-        .wallet { background: var(--panel); padding: 5px 10px; border-radius: 15px; font-size: 13px; font-weight: bold; color: var(--blue); }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; overflow: hidden; background: var(--tv-bg); color: var(--tv-text); }
+        
+        .app { 
+            width: 100%; max-width: 500px; height: 100%; margin: 0 auto;
+            display: flex; flex-direction: column; position: relative; overflow: hidden;
+        }
 
-        /* Token Info */
-        .tok-hdr { display: flex; align-items: center; padding: 10px 15px; gap: 10px; border-bottom: 1px solid #2b3139; }
-        .tok-ico { width: 30px; height: 30px; background: var(--blue); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; }
-        .tok-nm { font-weight: bold; font-size: 14px; }
-        .tok-mc { font-size: 12px; color: var(--muted); font-weight: normal; margin-left: 5px; }
+        /* --- АНИМАЦИИ --- */
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastIn { 0% { transform: translate(-50%, -20px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
+        @keyframes toastOut { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
 
-        /* TradingView Chart Container */
-        .chart-container { flex-grow: 1; position: relative; background: #000; }
-        #tradingview_widget { height: 100%; width: 100%; }
+        /* --- ВЕРХНЯЯ ПАНЕЛЬ --- */
+        .hdr { 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px; background: var(--tv-bg); border-bottom: 1px solid var(--tv-border);
+            z-index: 10; animation: slideDown 0.3s ease-out;
+        }
+        .back-btn { color: var(--tv-text-muted); text-decoration: none; font-size: 14px; font-weight: 500; }
+        .balance-box { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .wallet-btn { 
+            background: var(--tv-panel); border: 1px solid var(--tv-border); color: var(--tv-text);
+            padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; gap: 6px; transition: 0.2s;
+        }
+        .wallet-btn:hover { background: #2a2e39; }
 
-        /* Stats */
-        .stats { display: flex; justify-content: space-between; padding: 10px 15px; background: var(--panel); font-size: 12px; color: var(--muted); border-top: 1px solid #2b3139; border-bottom: 1px solid #2b3139; }
-        .stat-v { color: var(--text); font-weight: bold; font-size: 14px; display: block; margin-top: 2px; }
+        /* --- ГРАФИК --- */
+        .chart-container { flex: 1 1 auto; position: relative; background: var(--tv-bg); }
+        #tradingview_widget { width: 100%; height: 100%; }
 
-        /* Panel */
-        .panel { padding: 15px; display: flex; flex-direction: column; gap: 10px; background: var(--bg); }
-        .toggle { display: flex; background: var(--panel); border-radius: 10px; overflow: hidden; }
-        .t-btn { flex: 1; padding: 12px; text-align: center; font-weight: bold; cursor: pointer; color: var(--muted); }
-        .t-buy { background: rgba(14,203,129,.1); color: var(--green); border-bottom: 2px solid var(--green); }
-        .t-sell { background: rgba(246,70,93,.1); color: var(--red); border-bottom: 2px solid var(--red); }
+        /* --- ПАНЕЛЬ УПРАВЛЕНИЯ --- */
+        .panel { 
+            padding: 16px; display: flex; flex-direction: column; gap: 12px; 
+            background: var(--tv-bg); flex-shrink: 0; border-top: 1px solid var(--tv-border);
+            animation: slideUp 0.4s ease-out; z-index: 5;
+        }
 
-        .input-box { display: flex; background: var(--panel); border-radius: 10px; padding: 10px 15px; align-items: center; }
-        .input-box input { background: none; border: none; color: var(--text); font-size: 20px; font-weight: bold; width: 100%; outline: none; }
+        .toggle-wrapper { position: relative; display: flex; background: var(--tv-panel); border-radius: 4px; padding: 3px; border: 1px solid var(--tv-border); }
+        .toggle-slider { position: absolute; top: 3px; left: 3px; width: calc(50% - 3px); height: calc(100% - 6px); background: var(--tv-panel); border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
+        .toggle-slider.sell { transform: translateX(100%); }
 
-        .pcts { display: flex; gap: 10px; }
-        .pct-btn { flex: 1; background: var(--panel); border: none; color: var(--text); padding: 8px 0; border-radius: 5px; font-size: 12px; cursor: pointer; }
+        .t-btn { flex: 1; padding: 10px; text-align: center; font-weight: 600; font-size: 14px; cursor: pointer; color: var(--tv-text-muted); position: relative; z-index: 2; transition: color 0.3s; }
+        .t-btn.active-buy { color: var(--tv-green); }
+        .t-btn.active-sell { color: var(--tv-red); }
 
-        .exec-btn { padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
-        .ex-buy { background: var(--green); }
-        .ex-sell { background: var(--red); }
+        .input-box { display: flex; align-items: center; background: var(--tv-panel); border: 1px solid var(--tv-border); border-radius: 4px; padding: 12px 14px; transition: border-color 0.2s; }
+        .input-box:focus-within { border-color: var(--tv-blue); }
+        .input-box input { background: none; border: none; color: var(--tv-text); font-size: 20px; font-weight: 600; width: 100%; outline: none; }
+        .input-box .currency { color: var(--tv-text-muted); font-size: 14px; font-weight: 500; }
 
-        #toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 10px 20px; border-radius: 5px; font-size: 14px; opacity: 0; transition: .3s; z-index: 200; pointer-events: none; text-align: center; width: 80%; border-left: 4px solid var(--blue); }
+        .pcts { display: flex; gap: 6px; }
+        .pct-btn { flex: 1; background: var(--tv-panel); border: 1px solid var(--tv-border); color: var(--tv-text-muted); padding: 8px 0; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .pct-btn:active { transform: scale(0.96); }
+
+        .exec-btn { width: 100%; padding: 16px; border: none; border-radius: 4px; font-size: 16px; font-weight: 700; cursor: pointer; color: #fff; transition: all 0.2s; }
+        .exec-btn.buy { background: var(--tv-green); }
+        .exec-btn.sell { background: var(--tv-red); }
+        .exec-btn:active { transform: scale(0.98); }
+        .exec-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* --- МОДАЛЬНОЕ ОКНО КОШЕЛЬКА --- */
+        .wallet-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+            z-index: 100; display: none; align-items: flex-end;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .wallet-modal.show { display: flex; opacity: 1; }
+        
+        .wallet-content {
+            width: 100%; background: var(--tv-panel); border-top-left-radius: 20px; border-top-right-radius: 20px;
+            padding: 20px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 70%; display: flex; flex-direction: column;
+        }
+        .wallet-modal.show .wallet-content { transform: translateY(0); }
+
+        .wallet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .wallet-title { font-size: 18px; font-weight: 700; }
+        .close-btn { background: none; border: none; color: var(--tv-text-muted); font-size: 24px; cursor: pointer; }
+
+        .coins-list { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; }
+        
+        .coin-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--tv-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--tv-border);
+        }
+        .coin-info { display: flex; align-items: center; gap: 12px; }
+        .coin-icon { width: 36px; height: 36px; background: #2a2e39; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; color: var(--tv-blue); }
+        .coin-symbol { font-weight: 700; font-size: 15px; }
+        .coin-amount { font-size: 12px; color: var(--tv-text-muted); }
+        
+        .coin-value { text-align: right; }
+        .coin-rub { font-weight: 700; font-size: 15px; color: var(--tv-green); }
+        .coin-usd { font-size: 12px; color: var(--tv-text-muted); }
+
+        .empty-wallet { text-align: center; color: var(--tv-text-muted); padding: 30px 0; font-size: 14px; }
+
+        /* Тост */
+        #toast { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: var(--tv-panel); color: var(--tv-text); padding: 12px 20px; border-radius: 4px; font-size: 14px; border-left: 3px solid var(--tv-blue); opacity: 0; pointer-events: none; z-index: 200; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        .toast-show { display: block !important; animation: toastIn 0.3s forwards; }
+        .toast-hide { animation: toastOut 0.3s forwards; }
     </style>
 </head>
 <body>
 <div class="app">
     <div id="toast"></div>
 
+    <!-- Модальное окно кошелька -->
+    <div class="wallet-modal" id="walletModal" onclick="closeWallet(event)">
+        <div class="wallet-content" onclick="event.stopPropagation()">
+            <div class="wallet-header">
+                <div class="wallet-title">Мой Кошелек</div>
+                <button class="close-btn" onclick="closeWallet()">×</button>
+            </div>
+            <div class="coins-list" id="coinsList">
+                <div class="empty-wallet">У вас пока нет купленных монет.<br>Купите что-нибудь в терминале!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Шапка -->
     <div class="hdr">
-        <a href="apple_pay.html" class="back-btn" onclick="playSound('click')">‹ Назад в Wallet</a>
-        <div class="wallet">💰 <span id="sol">0.00</span> SOL</div>
+        <a href="apple_pay.html" class="back-btn" onclick="playSound('click')">‹ Назад</a>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="balance-box"><span id="rub-balance">0</span> ₽</div>
+            <button class="wallet-btn" onclick="openWallet()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                Кошелек
+            </button>
+        </div>
     </div>
 
-    <div class="tok-hdr">
-        <div class="tok-ico">M</div>
-        <div class="tok-nm">MISTER LIAR<span class="tok-mc" id="rub-balance">Баланс: 0 ₽</span></div>
-    </div>
-
-    <!-- ГРАФИК TRADINGVIEW -->
+    <!-- График -->
     <div class="chart-container">
         <div id="tradingview_widget"></div>
     </div>
 
-    <div class="stats">
-        <div>Токены<span class="stat-v" id="tkn">0.00</span></div>
-        <div>Ср. цена<span class="stat-v" id="avg">$0.00</span></div>
-        <div>PnL<span class="stat-v" id="pnl" style="color:var(--muted)">0%</span></div>
-    </div>
-
+    <!-- Панель торговли -->
     <div class="panel">
-        <div class="toggle">
-            <div class="t-btn t-buy" id="t-buy" onclick="setMode('buy')">Buy</div>
-            <div class="t-btn" id="t-sell" onclick="setMode('sell')">Sell</div>
+        <div class="toggle-wrapper">
+            <div class="toggle-slider" id="toggle-slider"></div>
+            <div class="t-btn active-buy" id="t-buy" onclick="setMode('buy')">Покупка</div>
+            <div class="t-btn" id="t-sell" onclick="setMode('sell')">Продажа</div>
         </div>
+
         <div class="input-box">
-            <input type="number" id="amt" placeholder="0.0" step="0.001"><span style="color:var(--muted)">SOL</span>
+            <input type="number" id="amt" placeholder="0.00" step="100">
+            <span class="currency">₽</span>
         </div>
+
         <div class="pcts">
-            <button class="pct-btn" onclick="setPct(10)">10%</button>
             <button class="pct-btn" onclick="setPct(25)">25%</button>
             <button class="pct-btn" onclick="setPct(50)">50%</button>
-            <button class="pct-btn" onclick="setPct(100)">100%</button>
+            <button class="pct-btn" onclick="setPct(75)">75%</button>
+            <button class="pct-btn" onclick="setPct(100)">Макс</button>
         </div>
-        <button class="exec-btn ex-buy" id="exec" onclick="trade()">Купить</button>
+
+        <button class="exec-btn buy" id="exec" onclick="trade()">Купить по рынку</button>
     </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
-    // ТВОЯ НОВАЯ БАЗА ДАННЫХ (Европа)
     const firebaseConfig = { databaseURL: "https://dsadasdas-25283-default-rtdb.europe-west1.firebasedatabase.app/" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const user = localStorage.getItem('walletUser');
     if (!user) window.location.href = 'index.html';
 
-    const RATE = 15000; 
-    let isProcessing = false;
+    let currentBalance = 0;
     let currentMode = 'buy';
+    let currentCoin = "SOL"; // По умолчанию Solana
+    let coinPriceInUsd = 145.50; // Примерная цена для расчета в USDT
 
-    // Состояние для симулятора (как на скрине)
-    let rubBalance = 0;
-    let solBalance = 0;
-    let tknBalance = 0;
-    let avgPrice = 0;
-    let currentPrice = 0.00337;
-
-    function playSound(soundName) {
-        try {
-            const audio = new Audio(soundName + '.mp3');
-            audio.volume = 0.5;
-            audio.play().catch(e => {});
-        } catch (e) {}
-    }
-
-    // Обновление баланса из Firebase
+    // Слушаем баланс
     db.ref('users/' + user + '/balance').on('value', snap => {
-        rubBalance = snap.val() || 0;
-        solBalance = rubBalance / RATE;
-        document.getElementById('rub-balance').innerText = `Баланс: ${rubBalance.toLocaleString()} ₽`;
-        document.getElementById('sol').innerText = solBalance.toFixed(4);
-        updateUI();
+        currentBalance = snap.val() || 0;
+        const el = document.getElementById('rub-balance');
+        el.innerText = currentBalance.toLocaleString();
     });
 
-    // Инициализация Графика TradingView
+    // Слушаем портфель (купленные монеты)
+    db.ref('users/' + user + '/portfolio').on('value', snap => {
+        const portfolio = snap.val() || {};
+        renderWallet(portfolio);
+    });
+
+    function playSound(name) {
+        try { new Audio(name + '.mp3').play().catch(()=>{}); } catch(e) {}
+    }
+
     function initTradingView() {
         new TradingView.widget({
-            "autosize": true,
-            "symbol": "BINANCE:SOLUSDT", // График Solana
-            "interval": "15",
-            "timezone": "Etc/UTC",
-            "theme": "dark",
-            "style": "1", // Свечи
-            "locale": "ru",
-            "toolbar_bg": "#f1f3f6",
-            "enable_publishing": false,
-            "allow_symbol_change": true, // Можно искать другие монеты
-            "container_id": "tradingview_widget"
+            "autosize": true, "symbol": "BINANCE:SOLUSDT", "interval": "15",
+            "timezone": "Etc/UTC", "theme": "dark", "style": "1", "locale": "ru",
+            "enable_publishing": false, "allow_symbol_change": true,
+            "container_id": "tradingview_widget",
+            "backgroundColor": "#131722", "gridColor": "#1e222d"
         });
     }
-    
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/tv.js';
     script.onload = initTradingView;
     document.head.appendChild(script);
 
-    // --- ЛОГИКА ТОРГОВЛИ ---
+    // Переключение режима
     function setMode(m) {
         playSound('click');
         currentMode = m;
-        document.getElementById('t-buy').className = 't-btn ' + (m === 'buy' ? 't-buy' : '');
-        document.getElementById('t-sell').className = 't-btn ' + (m === 'sell' ? 't-sell' : '');
+        const slider = document.getElementById('toggle-slider');
+        if (m === 'buy') {
+            slider.classList.remove('sell');
+            document.getElementById('t-buy').className = 't-btn active-buy';
+            document.getElementById('t-sell').className = 't-btn';
+        } else {
+            slider.classList.add('sell');
+            document.getElementById('t-buy').className = 't-btn';
+            document.getElementById('t-sell').className = 't-btn active-sell';
+        }
         const btn = document.getElementById('exec');
-        btn.className = 'exec-btn ' + (m === 'buy' ? 'ex-buy' : 'ex-sell');
-        btn.innerText = m === 'buy' ? 'Купить' : 'Продать';
+        btn.className = `exec-btn ${m}`;
+        btn.innerText = m === 'buy' ? 'Купить по рынку' : 'Продать по рынку';
     }
 
     function setPct(p) {
         playSound('click');
-        const inp = document.getElementById('amt');
-        if (currentMode === 'buy') inp.value = (solBalance * p / 100).toFixed(4);
-        else inp.value = ((tknBalance * currentPrice) * p / 100).toFixed(4);
+        document.getElementById('amt').value = Math.floor(currentBalance * (p / 100));
     }
 
-    function toast(msg, clr) {
+    function showToast(msg, type) {
         const t = document.getElementById('toast');
-        t.innerText = msg; t.style.borderLeft = '4px solid ' + clr; t.style.opacity = '1';
-        setTimeout(() => t.style.opacity = '0', 2500);
+        t.innerText = msg;
+        t.style.borderLeftColor = type === 'error' ? 'var(--tv-red)' : 'var(--tv-green)';
+        t.classList.remove('toast-hide'); t.classList.add('toast-show');
+        setTimeout(() => { t.classList.remove('toast-show'); t.classList.add('toast-hide'); }, 2500);
     }
 
+    // --- ЛОГИКА ТОРГОВЛИ С ПОРТФЕЛЕМ ---
     async function trade() {
-        if (isProcessing) return;
-        const amt = parseFloat(document.getElementById('amt').value);
-        if (isNaN(amt) || amt <= 0) {
-            playSound('error');
-            return toast('Введите сумму', 'var(--red)');
-        }
-        
-        const rubAmount = amt * RATE;
-        isProcessing = true;
         const btn = document.getElementById('exec');
+        const amt = parseFloat(document.getElementById('amt').value);
+        
+        if (isNaN(amt) || amt <= 0) return showToast('Введите сумму', 'error');
         btn.disabled = true;
 
-        if (currentMode === 'buy') {
-            if (rubAmount > rubBalance) {
-                playSound('error');
-                toast('Недостаточно рублей на балансе', 'var(--red)');
-                isProcessing = false; btn.disabled = false; return;
-            }
-            const tokensBought = amt / currentPrice;
-            const currentTotalValue = tknBalance * avgPrice;
-            const newTotalValue = currentTotalValue + amt;
-            tknBalance += tokensBought;
-            avgPrice = newTotalValue / tknBalance;
-            rubBalance -= rubAmount;
+        const userRef = db.ref('users/' + user);
+        const portfolioRef = db.ref('users/' + user + '/portfolio/' + currentCoin);
 
-            await db.ref('users/' + user).update({ balance: rubBalance });
+        if (currentMode === 'buy') {
+            if (amt > currentBalance) {
+                playSound('error'); showToast('Недостаточно средств', 'error'); btn.disabled = false; return;
+            }
+            
+            currentBalance -= amt;
+            await userRef.update({ balance: currentBalance });
+
+            // Добавляем монету в портфель
+            const snap = await portfolioRef.once('value');
+            const existing = snap.val() || { amountRub: 0, amountCoin: 0 };
+            
+            // Переводим рубли в "монеты" (для симуляции)
+            const coinsBought = amt / (coinPriceInUsd * 90); // 90 - примерный курс доллара
+            const newAmountRub = existing.amountRub + amt;
+            const newAmountCoin = existing.amountCoin + coinsBought;
+
+            await portfolioRef.update({ amountRub: newAmountRub, amountCoin: newAmountCoin });
+
             playSound('buy');
-            toast(`Куплено ${tokensBought.toFixed(2)} токенов`, 'var(--green)');
-            document.getElementById('amt').value = '';
+            showToast(`Куплено ${coinsBought.toFixed(4)} ${currentCoin}`, 'success');
 
         } else {
-            const tokensToSell = amt / currentPrice;
-            if (tokensToSell > tknBalance) {
-                playSound('error');
-                toast('Недостаточно токенов', 'var(--red)');
-                isProcessing = false; btn.disabled = false; return;
+            // Продажа
+            const snap = await portfolioRef.once('value');
+            const existing = snap.val();
+            
+            if (!existing || existing.amountRub <= 0) {
+                playSound('error'); showToast('У вас нет этой монеты', 'error'); btn.disabled = false; return;
             }
-            tknBalance -= tokensToSell;
-            rubBalance += rubAmount;
-            if (tknBalance < 0.0001) { tknBalance = 0; avgPrice = 0; }
 
-            await db.ref('users/' + user).update({ balance: rubBalance });
+            // Продаем часть или всё
+            const sellRatio = amt / existing.amountRub;
+            if (sellRatio > 1) {
+                playSound('error'); showToast('Недостаточно монет', 'error'); btn.disabled = false; return;
+            }
+
+            const rubToAdd = existing.amountRub * sellRatio;
+            currentBalance += rubToAdd;
+            await userRef.update({ balance: currentBalance });
+
+            const newAmountRub = existing.amountRub - rubToAdd;
+            const newAmountCoin = existing.amountCoin - (existing.amountCoin * sellRatio);
+
+            if (newAmountRub < 1) {
+                await portfolioRef.remove(); // Если продали всё, удаляем
+            } else {
+                await portfolioRef.update({ amountRub: newAmountRub, amountCoin: newAmountCoin });
+            }
+
             playSound('sell');
-            toast(`Продано на ${rubAmount.toLocaleString()} ₽`, 'var(--green)');
-            document.getElementById('amt').value = '';
+            showToast(`Продано на ${rubToAdd.toLocaleString()} ₽`, 'success');
         }
+
+        document.getElementById('amt').value = '';
+        setTimeout(() => { btn.disabled = false; }, 500);
+    }
+
+    // --- РЕНДЕР КОШЕЛЬКА ---
+    function renderWallet(portfolio) {
+        const list = document.getElementById('coinsList');
+        list.innerHTML = '';
         
-        updateUI();
-        setTimeout(() => { isProcessing = false; btn.disabled = false; }, 500);
+        const keys = Object.keys(portfolio);
+        if (keys.length === 0) {
+            list.innerHTML = '<div class="empty-wallet">У вас пока нет купленных монет.<br>Купите что-нибудь в терминале!</div>';
+            return;
+        }
+
+        keys.forEach(coin => {
+            const data = portfolio[coin];
+            list.innerHTML += `
+                <div class="coin-item">
+                    <div class="coin-info">
+                        <div class="coin-icon">${coin[0]}</div>
+                        <div>
+                            <div class="coin-symbol">${coin}</div>
+                            <div class="coin-amount">${data.amountCoin.toFixed(4)} ${coin}</div>
+                        </div>
+                    </div>
+                    <div class="coin-value">
+                        <div class="coin-rub">${Math.floor(data.amountRub).toLocaleString()} ₽</div>
+                        <div class="coin-usd">≈ $${(data.amountRub / 90).toFixed(2)}</div>
+                    </div>
+                </div>
+            `;
+        });
     }
 
-    function updateUI() {
-        document.getElementById('tkn').innerText = tknBalance.toFixed(2);
-        document.getElementById('avg').innerText = tknBalance > 0 ? '$' + avgPrice.toFixed(5) : '$0.00';
-        const pnlEl = document.getElementById('pnl');
-        if (tknBalance > 0) {
-            const pct = (((tknBalance * currentPrice) - (tknBalance * avgPrice)) / (tknBalance * avgPrice)) * 100;
-            pnlEl.innerText = (pct > 0 ? '+' : '') + pct.toFixed(2) + '%';
-            pnlEl.style.color = pct > 0 ? 'var(--green)' : pct < 0 ? 'var(--red)' : 'var(--muted)';
-        } else { pnlEl.innerText = '0%'; pnlEl.style.color = 'var(--muted)'; }
+    function openWallet() {
+        playSound('click');
+        document.getElementById('walletModal').classList.add('show');
     }
 
+    function closeWallet(e) {
+        if (e && e.target.id !== 'walletModal') return;
+        document.getElementById('walletModal').classList.remove('show');
+    }
 </script>
 </body>
 </html>
