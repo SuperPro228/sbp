@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Passat Trading Terminal</title>
+    <title>Trading Terminal</title>
     <style>
         :root {
             --bg: #0b0e11; --panel: #1e2329; --text: #eaecef; --muted: #848e9c;
@@ -18,16 +18,19 @@
         .back-btn { color: var(--blue); text-decoration: none; font-size: 15px; font-weight: 600; }
         .wallet { background: var(--panel); padding: 5px 10px; border-radius: 15px; font-size: 13px; font-weight: bold; color: var(--blue); }
 
-        /* Token Input */
-        .token-input-box { display: flex; gap: 10px; padding: 10px 15px; background: var(--panel); border-bottom: 1px solid #2b3139; }
-        .token-input-box input { flex: 1; background: #0b0e11; border: 1px solid #2b3139; border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 13px; outline: none; }
-        .token-input-box button { background: var(--blue); color: #fff; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        /* Кнопка перехода на реальный TradingView */
+        .open-tv-btn {
+            display: block; background: #2962ff; color: white; text-align: center;
+            padding: 12px; margin: 10px 15px; border-radius: 8px; text-decoration: none;
+            font-weight: bold; font-size: 14px;
+        }
+        .open-tv-btn:active { background: #1e4bd8; }
 
-        /* Iframe Chart */
-        .chart-container { flex-grow: 1; position: relative; background: #000; }
-        .chart-container iframe { width: 100%; height: 100%; border: none; display: block; }
+        /* Контейнер для виджета TradingView */
+        .tv-widget-container { flex-grow: 1; padding: 0 15px; position: relative; }
+        .tradingview-widget-container { height: 100%; width: 100%; }
 
-        /* Trading Panel */
+        /* Панель управления */
         .panel { padding: 15px; display: flex; flex-direction: column; gap: 12px; background: var(--bg); }
         .input-box { display: flex; background: var(--panel); border-radius: 10px; padding: 10px 15px; align-items: center; }
         .input-box input { background: none; border: none; color: var(--text); font-size: 20px; font-weight: bold; width: 100%; outline: none; }
@@ -51,15 +54,16 @@
         <div class="wallet">💰 <span id="rub-balance">0</span> ₽</div>
     </div>
 
-    <!-- Поле для ввода адреса токена -->
-    <div class="token-input-box">
-        <input type="text" id="tokenAddress" placeholder="Вставь адрес токена (Solana)" value="So11111111111111111111111111111111111111112">
-        <button onclick="loadChart()">Загрузить</button>
-    </div>
+    <!-- Ссылка на настоящий TradingView -->
+    <a href="https://ru.tradingview.com/chart/" target="_blank" class="open-tv-btn">
+        🌐 Открыть TradingView на весь экран
+    </a>
 
-    <!-- График DexScreener (как TradingView) -->
-    <div class="chart-container">
-        <iframe id="dexscreenerChart" src="" allowfullscreen></iframe>
+    <!-- Официальный виджет TradingView -->
+    <div class="tv-widget-container">
+        <div class="tradingview-widget-container">
+            <div id="tradingview_widget"></div>
+        </div>
     </div>
 
     <!-- Панель управления -->
@@ -95,25 +99,36 @@
 
     let currentBalance = 0;
 
-    // Слушаем баланс в реальном времени
+    // Слушаем баланс
     db.ref('users/' + user + '/balance').on('value', snap => {
         currentBalance = snap.val() || 0;
         document.getElementById('rub-balance').innerText = currentBalance.toLocaleString();
     });
 
-    // Загрузка графика DexScreener
-    function loadChart() {
-        const token = document.getElementById('tokenAddress').value.trim();
-        if (!token) return toast('Введите адрес токена', 'var(--red)');
-
-        // DexScreener embed (выглядит как полноценный TradingView)
-        const iframe = document.getElementById('dexscreenerChart');
-        iframe.src = `https://dexscreener.com/solana/${token}?embed=1&theme=dark&trades=0&info=0&chartTheme=dark&chartStyle=1&interval=15`;
-        
-        toast('График загружен', 'var(--blue)');
+    // Инициализация виджета TradingView
+    function initTradingView() {
+        new TradingView.widget({
+            "autosize": true,
+            "symbol": "BINANCE:SOLUSDT",
+            "interval": "15",
+            "timezone": "Etc/UTC",
+            "theme": "dark",
+            "style": "1",
+            "locale": "ru",
+            "toolbar_bg": "#f1f3f6",
+            "enable_publishing": false,
+            "allow_symbol_change": true,
+            "container_id": "tradingview_widget"
+        });
     }
+    
+    // Подключаем скрипт TradingView и запускаем виджет
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.onload = initTradingView;
+    document.head.appendChild(script);
 
-    // Автоматический расчет процентов от баланса
+    // Расчет процентов
     function setPct(p) {
         const amtInput = document.getElementById('amt');
         amtInput.value = Math.floor(currentBalance * (p / 100));
@@ -142,9 +157,6 @@
         t.innerText = msg; t.style.borderLeft = '4px solid ' + clr; t.style.opacity = '1';
         setTimeout(() => t.style.opacity = '0', 2500);
     }
-
-    // Загружаем дефолтный график (SOL) при открытии
-    loadChart();
 </script>
 </body>
 </html>
